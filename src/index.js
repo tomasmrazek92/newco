@@ -106,18 +106,6 @@ function initSections() {
         },
       });
     }
-    if (sectionIndex === 1) {
-      gsap.from('.bottom-wave-img', {
-        yPercent: 50,
-        opacity: 0,
-        scrollTrigger: {
-          ...config,
-          scrub: 1,
-          start: 'right right',
-          end: 'right center',
-        },
-      });
-    }
   });
 }
 

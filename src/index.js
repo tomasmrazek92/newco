@@ -10,13 +10,23 @@ function initScrolling() {
   cleanupScrolling();
   state.isMobile = $(window).width() <= 991;
 
+  // Function to get URL parameters
+  const getUrlParam = (param) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+  };
+
+  // Get touchMultiplier from URL or use default
+  const touchMultiplierParam = getUrlParam('touch');
+  const touchMultiplier = touchMultiplierParam ? parseFloat(touchMultiplierParam) : 0.8;
+
   // Init Lenis
   state.lenis = new Lenis({
     content: state.$content[0],
     lerp: 1,
     duration: 1,
     easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-    touchMultiplier: 1,
+    touchMultiplier: touchMultiplier,
     smoothWheel: true,
     syncTouch: true,
     orientation: state.isMobile ? 'vertical' : 'horizontal',

@@ -13,8 +13,8 @@ export const createResponsiveSwiper = (
 ) => {
   // Step 2: Fetch elements by their componentSelector; if none, exit the function
   let elements = $(componentSelector).add(swiperSelector);
-  console.log(elements.length);
-  if (elements.length !== 2) return;
+  console.log('Swipers - ' + elements.length);
+  if (elements.length < 2) return;
 
   // Reset the uniqueIdCounters for this classSelector to 0
   uniqueIdCounters[classSelector] = 0;
@@ -28,7 +28,7 @@ export const createResponsiveSwiper = (
     // Step 4: Add unique classes to swiper container, arrows and pagination for this instance
     addUniqueClassesToElements(this, swiperSelector, uniqueKey, [
       '.swiper-arrow',
-      '.swiper-navigation',
+      '.swiper-nav',
       '.swiper-drag-wrapper',
     ]);
 
@@ -55,10 +55,10 @@ const addUniqueClassesToElements = (context, swiperSelector, uniqueKey, controlS
 const getMergedSwiperOptions = (options, uniqueKey) => {
   // Default pagination config
   const defaultPagination = {
-    el: `.swiper-navigation.${uniqueKey}`,
+    el: `.swiper-nav.${uniqueKey}`,
     type: 'bullets',
-    bulletActiveClass: 'swiper-bullet-active',
-    bulletClass: 'swiper-bullet',
+    bulletActiveClass: 'cc-active',
+    bulletClass: 'swiper-dot',
     clickable: true,
   };
 

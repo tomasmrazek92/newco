@@ -106,6 +106,18 @@ function initSections() {
         },
       });
     }
+    if (sectionIndex === 1) {
+      gsap.from('.bottom-wave-img', {
+        yPercent: 50,
+        opacity: 0,
+        scrollTrigger: {
+          ...config,
+          scrub: 1,
+          start: 'right right',
+          end: 'right center',
+        },
+      });
+    }
   });
 }
 
@@ -161,12 +173,11 @@ function gsapSection(sectionEl) {
     );
   }
   if (items.length) {
-    const previousTweens = tl.getChildren(); // Get all tweens in the timeline
     tl.fromTo(
       items,
       { y: '2rem', opacity: 0 },
       { y: '0rem', opacity: 1, visibility: 'visible', stagger: stagger },
-      previousTweens.length > 0 ? '<' : '<'
+      '<'
     );
   }
   if (itemsStagger.length) {
@@ -175,7 +186,10 @@ function gsapSection(sectionEl) {
       let stagger = $(this).attr('data-stagger') || 0.1;
 
       // Set initial visibility
-      gsap.set([this, items], { visibility: 'visible' });
+      gsap.set([this, items], {
+        visibility: 'visible',
+        immediateRender: true, // Add this
+      });
 
       // Then do the stagger animation
       tl.from(
@@ -184,7 +198,9 @@ function gsapSection(sectionEl) {
           y: '1rem',
           opacity: 0,
           stagger: stagger,
-          clearProps: 'visibility', // Clear visibility prop after animation
+          clearProps: 'visibility',
+          overwrite: 'auto', // Add this
+          force3D: true, // Add this
         },
         '<'
       );
@@ -422,6 +438,8 @@ function animateNavBackground(targetLinkText) {
     },
   });
 }
+
+// Scroll Anchors
 $('.nav_menu-link').on('click', function (e) {
   e.preventDefault();
 
@@ -438,12 +456,29 @@ $('.nav_menu-link').on('click', function (e) {
   }
 });
 
+$('[hero-scroll]').on('click', function () {
+  state.lenis.scrollTo($(`section`).eq(1)[0], {
+    duration: 1, // Duration in seconds (default is 1)
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth easing function
+    lock: true, // Prevents user scroll during animation
+    lerp: 0.1, // Lower number = smoother scrolling (default is 0.1)
+  });
+});
+
+$('.nav_brand').on('click', function () {
+  state.lenis.scrollTo($(`section`).eq(0)[0], {
+    duration: 1, // Duration in seconds (default is 1)
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth easing function
+    lock: true, // Prevents user scroll during animation
+    lerp: 0.1, // Lower number = smoother scrolling (default is 0.1)
+  });
+});
+
 // Cleanup function
 function cleanupScrolling() {
   ScrollTrigger.getAll().forEach((st) => st.kill());
   if (state.lenis) state.lenis.destroy();
 }
-
 // Modals
 function initModalBasic() {
   const modalGroup = document.querySelector('[data-modal-group-status]');
@@ -541,3 +576,64 @@ $(document).ready(function () {
   // Cleanup on page unload
   $(window).on('beforeunload', cleanupScrolling);
 });
+
+// Swipers
+
+import { initSwipers } from './utils/globalFunctions';
+
+// Sample data for swiperInstances, specific to this page
+const swiperInstances = [
+  [
+    '.section.cc-about',
+    '.about-wrap',
+    'about-slider',
+    {
+      slidesPerView: 'auto',
+      spaceBetween: 32,
+    },
+    'mobile',
+  ],
+  [
+    '.section.cc-team',
+    '.team-list-wrap',
+    'team-slider',
+    {
+      slidesPerView: 'auto',
+      spaceBetween: 16,
+    },
+    'mobile',
+  ],
+  [
+    '.section.cc-exp',
+    '.experience_slider',
+    'exp-slider',
+    {
+      slidesPerView: 'auto',
+      spaceBetween: 32,
+    },
+    'mobile',
+  ],
+  [
+    '.section.cc-exp-cards',
+    '.exp-cards_wrap',
+    'exp-cards-slider',
+    {
+      slidesPerView: 'auto',
+      spaceBetween: 32,
+    },
+    'mobile',
+  ],
+  [
+    '.section.cc-ceo',
+    '.ceo_slider',
+    'ceo-slider',
+    {
+      slidesPerView: 'auto',
+      spaceBetween: 16,
+    },
+    'mobile',
+  ],
+];
+
+// Initialize swipers with instances specific to this page
+initSwipers(swiperInstances);

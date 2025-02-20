@@ -704,7 +704,19 @@ initSwipers(swiperInstances);
 const initMobilePinning = () => {
   if (window.innerWidth >= 992) return;
 
+  // Force better performance settings globally
+  ScrollTrigger.config({
+    limitCallbacks: true,
+    ignoreMobileResize: true,
+  });
+
   const sections = $('.section');
+
+  // Force hardware acceleration for all sections
+  gsap.set(sections, {
+    willChange: 'transform',
+    backfaceVisibility: 'hidden',
+  });
 
   sections.each((index, section) => {
     if (index === sections.length - 1) return; // Skip last section
@@ -720,8 +732,12 @@ const initMobilePinning = () => {
     }
     const $wrapper = $section.parent();
 
-    // Copy section's height to wrapper
+    // Copy section's height to wrapper and add hardware acceleration
     $wrapper.height(currentHeight);
+    gsap.set($wrapper, {
+      willChange: 'transform',
+      backfaceVisibility: 'hidden',
+    });
 
     // Set initial z-index
     $wrapper.css({ zIndex: 1, position: 'relative' });
@@ -730,28 +746,34 @@ const initMobilePinning = () => {
     ScrollTrigger.create({
       trigger: $wrapper[0],
       endTrigger: nextSection,
-      // Short sections: pin at top
-      // Long sections: pin when next section appears at bottom
       start: isShortSection ? 'top top' : 'bottom bottom',
-      // For all sections: unpin when next section hits top
       end: 'bottom top',
       pin: true,
       pinSpacing: false,
+      fastScrollEnd: true,
+      preventOverlaps: true,
       onEnter: () => {
-        gsap.set($wrapper[0], { zIndex: 1 });
-        gsap.set(nextSection, { zIndex: 2 });
+        requestAnimationFrame(() => {
+          gsap.set($wrapper[0], { zIndex: 1 });
+          gsap.set(nextSection, { zIndex: 2 });
+        });
       },
       onLeave: () => {
-        gsap.set($wrapper[0], { zIndex: 1 });
-        gsap.set(nextSection, { zIndex: 2 });
+        requestAnimationFrame(() => {
+          gsap.set($wrapper[0], { zIndex: 1 });
+          gsap.set(nextSection, { zIndex: 2 });
+        });
       },
       onEnterBack: () => {
-        gsap.set($wrapper[0], { zIndex: 1 });
-        gsap.set(nextSection, { zIndex: 2 });
+        requestAnimationFrame(() => {
+          gsap.set($wrapper[0], { zIndex: 1 });
+          gsap.set(nextSection, { zIndex: 2 });
+        });
       },
       onRefresh: () => {
-        // Update wrapper height if section height changes
-        $wrapper.height($section.outerHeight());
+        requestAnimationFrame(() => {
+          $wrapper.height($section.outerHeight());
+        });
       },
     });
   });
@@ -759,10 +781,13 @@ const initMobilePinning = () => {
 
 // Init
 $(document).ready(() => {
-  // Then initialize pinning
+  // Register plugin with performance settings
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Initialize pinning
   initMobilePinning();
 
-  // Reinit on resize
+  // Optimized resize handling
   let resizeTimeout;
   let prevWidth = $(window).width();
 
@@ -770,16 +795,16 @@ $(document).ready(() => {
     const currentWidth = $(window).width();
 
     if (currentWidth !== prevWidth) {
-      // Only trigger on width changes
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         ScrollTrigger.getAll().forEach((st) => {
           if (st.vars.pin) st.kill();
         });
         initMobilePinning();
-        prevWidth = currentWidth; // Update the previous width
+        prevWidth = currentWidth;
       }, 250);
     }
   });
 });
+
 // #endregion

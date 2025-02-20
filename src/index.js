@@ -31,6 +31,10 @@ function initScrolling() {
     orientation: state.isMobile ? 'vertical' : 'horizontal',
   });
 
+  state.lenis.on('scroll', ({ scroll }) => {
+    console.log('Current scroll position:', scroll);
+  });
+
   // Set up ScrollTrigger for horizontal scroll
   if (!state.isMobile) {
     state.lenis.on('scroll', ScrollTrigger.update);
@@ -61,13 +65,18 @@ function initScrolling() {
     state.lenis.raf(time);
     requestAnimationFrame(raf);
   });
+
+  state.lenis.scrollTo('start', {
+    immediate: true,
+    lock: true, // Add this to force the scroll
+  });
 }
 // Section initialization with consistent config
 function initSections() {
   // Scroll Navs
-  $('section').each(function () {
+  $('.section_part').each(function () {
     const $section = $(this);
-    const $allSections = $('section'); // Replace with your sections' class
+    const $allSections = $('.section_part'); // Replace with your sections' class
     const sectionIndex = $allSections.index($section);
     const sectionId = $section.attr('id');
     const sectionLink = $section.attr('data-section');
@@ -173,12 +182,10 @@ function runPreloader() {
 
   let tl = gsap.timeline({
     onStart: () => {
-      // Immediately stop it
       state.lenis.stop();
     },
     onComplete: () => {
       state.lenis.start();
-      gsapSection($('section').eq(0));
     },
   });
 
@@ -307,9 +314,9 @@ function gsapAnimate(element) {
 
   // Heading animation
   if ($el.is('[data-animation="heading"]')) {
-    const type = $el.attr('data-split-type') || 'line';
+    const type = $el.attr('data-split-type') || 'word';
     const typeSplit = new SplitType($el, {
-      types: 'lines, words, chars',
+      types: 'words, chars',
       tagName: 'span',
     });
 
@@ -425,7 +432,7 @@ function animateNavBackground(targetLinkText) {
     console.log('target-' + targetLink);
     console.log('navcontainer-' + navContainer);
     console.log('target-link-text' + targetLinkText);
-    gsap.set(navBg, { opacity: 0 });
+    $('.nav_menu-bg').css('opacity', '0');
     navLinks.forEach((link) => link.classList.remove('active'));
     return;
   }
@@ -503,14 +510,33 @@ $('.nav_menu-link').on('click', function (e) {
   e.preventDefault();
 
   const linkId = $(this).attr('id');
-  const targetSection = $(`section[data-section="${linkId}"]`).first();
+  const targetSection = $(`.section_part[data-section="${linkId}"]`);
+  console.log(targetSection);
 
   if (targetSection.length && state.lenis) {
-    state.lenis.scrollTo(targetSection[0], {
-      duration: 4, // Duration in seconds (default is 1)
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Smooth easing function
-      lock: true, // Prevents user scroll during animation
-      lerp: 0.1, // Lower number = smoother scrolling (default is 0.1)
+    // Get the pin-spacer parent if it exists
+    const pinSpacer = targetSection.parent('.pin-spacer');
+
+    // Calculate the actual scroll position
+    let scrollTarget;
+
+    if (pinSpacer.length) {
+      // If section is pinned, use the pin-spacer's offset
+      scrollTarget = pinSpacer.offset().top;
+    } else {
+      // If section is not pinned, use the section's offset
+      scrollTarget = targetSection.offset().left;
+    }
+
+    // Add any additional offset for fixed headers if needed
+    // const headerOffset = $('.your-header').height(); // Uncomment if needed
+    // scrollTarget -= headerOffset;
+
+    state.lenis.scrollTo(scrollTarget, {
+      duration: 2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lock: true,
+      lerp: 0.1,
     });
   }
 });
@@ -703,7 +729,7 @@ initSwipers(swiperInstances);
 const initMobilePinning = () => {
   if (window.innerWidth >= 992) return;
 
-  const sections = $('.section');
+  const sections = $('.section_part');
 
   sections.each((index, section) => {
     if (index === sections.length - 1) return; // Skip last section

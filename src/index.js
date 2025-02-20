@@ -380,28 +380,15 @@ function gsapAnimate(element) {
   }
 
   // Counter animation
-  if ($el.is('[data-animation="counter"]')) {
+  if ($el.is('[data-animation="writer"]')) {
     const scoreText = $el.text();
-    const score = parseFloat(scoreText);
-    const counter = { val: 0 };
 
-    tl.to(counter, {
-      val: score,
-      duration: 1,
-      onStart: () => {
-        gsap.to($el, { opacity: 1 });
-      },
-      onUpdate: function () {
-        $el.text(counter.val.toFixed(0));
-      },
-      ease: 'power2.out',
+    $el.text('');
+    tl.to($elt, {
+      duration: 2,
+      text: scoreText,
+      ease: 'none',
     });
-    tl.to($el, { visibility: 'visible' }, '<');
-  }
-
-  // Fade animation
-  if ($el.is('[data-animation="fade"]')) {
-    tl.from($el, { opacity: 0 });
   }
 
   return tl;
@@ -541,7 +528,6 @@ $('.nav_menu-link').on('click', function (e) {
     state.lenis.scrollTo(scrollTarget, {
       duration: 2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      lock: true,
       lerp: 0.1,
     });
   }

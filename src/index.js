@@ -712,52 +712,44 @@ const initMobilePinning = () => {
     const currentHeight = $(section).outerHeight();
     const isShortSection = currentHeight <= window.innerHeight;
 
-    // Create a wrapper for pinning
-    const $section = $(section);
-    if (!$section.parent('.pin-wrapper').length) {
-      $section.wrap('<div class="pin-wrapper"></div>');
-    }
-    const $wrapper = $section.parent();
-
-    // Copy section's height to wrapper
-    $wrapper.height(currentHeight);
-
-    // Set initial z-index
-    $wrapper.css({ zIndex: 1, position: 'relative' });
-    $(nextSection).css({ zIndex: 2 });
+    // Set initial z-index - lower sections should have higher z-index
+    $(section).css({ position: 'relative', zIndex: 1 });
+    $(nextSection).css({ position: 'relative', zIndex: 2 });
 
     ScrollTrigger.create({
-      trigger: $wrapper[0],
-      endTrigger: nextSection,
+      trigger: section,
       start: isShortSection ? 'top top' : 'bottom bottom',
-      end: 'bottom top',
+      endTrigger: nextSection,
+      end: 'top top',
       pin: true,
       pinSpacing: false,
-      scrub: 1, // Add smooth scrubbing
-      anticipatePin: 1, // Help prevent jank
-      onUpdate: (self) => {
-        // Use progress to smoothly handle z-index
-        if (self.progress > 0) {
-          $wrapper.css({ zIndex: 1 });
-          $(nextSection).css({ zIndex: 2 });
-        } else {
-          $wrapper.css({ zIndex: 2 });
-          $(nextSection).css({ zIndex: 1 });
-        }
+      anticipatePin: 1,
+      onEnter: () => {
+        // Keep next section above current
+        $(section).css({ zIndex: 1 });
+        $(nextSection).css({ zIndex: 2 });
       },
-      onRefresh: () => {
-        $wrapper.height($section.outerHeight());
+      onEnterBack: () => {
+        // Maintain z-index when scrolling back
+        $(section).css({ zIndex: 1 });
+        $(nextSection).css({ zIndex: 2 });
       },
-      invalidateOnRefresh: true, // Recalculate on refresh
+      onLeave: () => {
+        // Keep next section above when leaving
+        $(section).css({ zIndex: 1 });
+        $(nextSection).css({ zIndex: 2 });
+      },
+      onLeaveBack: () => {
+        // Keep next section above when scrolling back
+        $(section).css({ zIndex: 1 });
+        $(nextSection).css({ zIndex: 2 });
+      },
     });
   });
 };
 
 // Init
 $(document).ready(() => {
-  // Register plugin
-  gsap.registerPlugin(ScrollTrigger);
-
   // Initialize pinning
   initMobilePinning();
 
@@ -780,5 +772,19 @@ $(document).ready(() => {
     }
   });
 });
+
+// Simplified CSS
+/*
+  .section {
+    width: 100%;
+    backface-visibility: hidden;
+  }
+  
+  @media screen and (min-width: 992px) {
+    .section {
+      transform: none !important;
+    }
+  }
+  */
 
 // #endregion

@@ -151,13 +151,14 @@ function initSections() {
   // Animations
   $('[data-animation]').each(function () {
     const $el = $(this);
+    const isHero = $el.closest('.section.cc-hero').length;
 
     const config = {
       trigger: $el,
       start: state.isMobile ? 'top 80%' : 'left 80%',
       scrub: true,
       onEnter: function () {
-        if (!$el.attr('animated')) {
+        if (!$el.attr('animated') && !isHero) {
           $el.attr('animated', 'true');
           gsapAnimate($el);
         }
@@ -189,6 +190,10 @@ function runPreloader() {
     },
     onComplete: () => {
       state.lenis.start();
+      let heroItems = $('.section.cc-hero').find('[data-animation]');
+      heroItems.each(function () {
+        gsapAnimate($(this));
+      });
     },
   });
 

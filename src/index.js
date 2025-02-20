@@ -747,25 +747,27 @@ const initMobilePinning = () => {
 
 // Init
 $(document).ready(() => {
-  gsap.registerPlugin(ScrollTrigger);
-
-  // Set up other animations first
-  // ... your existing ScrollTrigger animations ...
-
   // Then initialize pinning
   initMobilePinning();
 
   // Reinit on resize
   let resizeTimeout;
+  let prevWidth = $(window).width();
+
   $(window).on('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-      ScrollTrigger.getAll().forEach((st) => {
-        // Only kill pin triggers, leave other animations
-        if (st.vars.pin) st.kill();
-      });
-      initMobilePinning();
-    }, 250);
+    const currentWidth = $(window).width();
+
+    if (currentWidth !== prevWidth) {
+      // Only trigger on width changes
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        ScrollTrigger.getAll().forEach((st) => {
+          if (st.vars.pin) st.kill();
+        });
+        initMobilePinning();
+        prevWidth = currentWidth; // Update the previous width
+      }, 250);
+    }
   });
 });
 

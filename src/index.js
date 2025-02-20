@@ -4,6 +4,7 @@ let state = {
   $content: $('.page-main'),
 };
 
+// #region scrollFunction
 // Core initialization
 function initScrolling() {
   cleanupScrolling();
@@ -53,6 +54,7 @@ function initScrolling() {
 }
 // Section initialization with consistent config
 function initSections() {
+  // Scroll Navs
   $('section').each(function () {
     const $section = $(this);
     const $allSections = $('section'); // Replace with your sections' class
@@ -62,24 +64,25 @@ function initSections() {
 
     const config = {
       trigger: $section,
-      start: state.isMobile ? 'top 80%' : 'left 80%',
-      end: state.isMobile ? 'bottom 0%' : 'right 0%',
+      start: state.isMobile ? 'top 80%' : 'left center',
+      end: state.isMobile ? 'bottom 0%' : 'right center',
       scrub: true,
-      markers: true,
       onEnter: () => {
-        console.log('In View ' + sectionIndex);
-        console.log(sectionIndex);
-        if (!$section.hasClass('animated') && sectionIndex !== 0) {
-          $section.addClass('animated');
-          gsapSection($section);
+        if (sectionIndex === 0) {
+          $('.btn.cc-nav').addClass('start');
         }
         animateNavBackground(sectionLink);
       },
       onEnterBack: () => {
+        if (sectionIndex === 0) {
+          $('.btn.cc-nav').addClass('start');
+        }
         animateNavBackground(sectionLink);
       },
       onLeave: () => {
-        console.log('Out View ' + sectionIndex);
+        if (sectionIndex === 0) {
+          $('.btn.cc-nav').removeClass('start');
+        }
       },
     };
 
@@ -93,148 +96,65 @@ function initSections() {
       scrollTrigger: config,
     });
 
-    // Hero
     if (sectionIndex === 0) {
-      gsap.to('.hero-bg_box', {
-        scale: 1.2,
-        opacity: 0,
+      // Custom Anims
+      const tl0 = gsap.timeline({
         scrollTrigger: {
           ...config,
-          scrub: 1,
-          start: 'right right',
-          end: 'right center',
+          start: state.isMobile ? 'top top' : 'left left',
+          end: state.isMobile ? 'bottom top' : 'right left',
         },
       });
+
+      tl0.to('.hero-bg_box', {
+        opacity: 0,
+      });
     }
+
+    if (sectionIndex === 1) {
+      const tl1 = gsap.timeline({
+        scrollTrigger: {
+          ...config,
+          start: state.isMobile ? 'top top' : 'left left',
+          end: state.isMobile ? 'bottom top' : 'right left',
+        },
+      });
+
+      tl1.from('.bottom-wave-box', {
+        opacity: 0,
+      });
+    }
+  });
+
+  // Animations
+  $('[data-animation]').each(function () {
+    const $el = $(this);
+
+    const config = {
+      trigger: $el,
+      start: state.isMobile ? 'top 80%' : 'left 80%',
+      scrub: true,
+      onEnter: function () {
+        if (!$el.attr('animated')) {
+          $el.attr('animated', 'true');
+          gsapAnimate($el);
+        }
+      },
+    };
+
+    // Add scroller and horizontal props for desktop
+    if (!state.isMobile) {
+      config.scroller = state.$content[0];
+      config.horizontal = true;
+    }
+
+    const tl = gsap.timeline({
+      scrollTrigger: config,
+    });
   });
 }
 
 // GSAP Anims
-function gsapSet() {
-  gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
-}
-function gsapSection(sectionEl) {
-  // els
-  let trigger = $(sectionEl);
-  let heading = $(sectionEl).find('[data-animation="heading"]');
-  let items = $(sectionEl).find('[data-animation="item"]');
-  let itemsStagger = $(sectionEl).find('[data-animation="stagger"]'); // childs = [data-animation="stagger-item"]
-  let counter = $(sectionEl).find('[data-animation="counter"]');
-  let fade = $(sectionEl).find('[data-animation="fade"]');
-
-  // properties
-  let stagger = trigger.attr('data-stagger') || 0.2;
-
-  let tl = gsap.timeline();
-
-  if (heading.length) {
-    let type = heading.attr('data-split-type') || 'line';
-    let typeSplit = new SplitType(heading, {
-      types: 'lines, words, chars',
-      tagName: 'span',
-    });
-
-    tl.from(
-      heading.find(`.${type}`),
-      {
-        y: '2rem',
-        opacity: 0,
-        duration: 1,
-        ease: 'power3.out',
-        stagger: 0.1,
-      },
-      '<'
-    );
-    tl.to(
-      heading,
-      {
-        visibility: 'visible',
-      },
-      '<'
-    );
-    tl.to(
-      heading.find(`.${type}`),
-      {
-        visibility: 'visisble',
-      },
-      '<'
-    );
-  }
-  if (items.length) {
-    tl.fromTo(
-      items,
-      { y: '2rem', opacity: 0 },
-      { y: '0rem', opacity: 1, visibility: 'visible', stagger: stagger },
-      '<'
-    );
-  }
-  if (itemsStagger.length) {
-    itemsStagger.each(function () {
-      let items = $(this).find('[data-animation="stagger-item"]');
-      let stagger = $(this).attr('data-stagger') || 0.1;
-
-      // Set initial visibility
-      gsap.set([this, items], {
-        visibility: 'visible',
-        immediateRender: true, // Add this
-      });
-
-      // Then do the stagger animation
-      tl.from(
-        items,
-        {
-          y: '1rem',
-          opacity: 0,
-          stagger: stagger,
-          clearProps: 'visibility',
-          overwrite: 'auto', // Add this
-          force3D: true, // Add this
-        },
-        '<'
-      );
-    });
-  }
-  if (counter.length) {
-    $(counter).each(function () {
-      let element = $(this);
-      let scoreText = element.text();
-
-      // Continue with normal animation for numeric scores
-      let score = parseFloat(scoreText);
-      let counter = { val: 0 };
-
-      // Animate both width and counter
-      tl.to(
-        counter,
-        {
-          val: score,
-          duration: 1,
-          onStart: () => {
-            gsap.to(element, { opacity: 1 });
-          },
-          onUpdate: function () {
-            element.text(counter.val.toFixed(0));
-          },
-          ease: 'power2.out',
-        },
-        '<'
-      );
-
-      tl.to(
-        element,
-        {
-          visibility: 'visible',
-        },
-        '<'
-      );
-    });
-  }
-  if (fade.length) {
-    fade.each(function () {
-      tl.from($(this), { opacity: 0 }, '<');
-    });
-  }
-}
 function runPreloader() {
   let preloader = $('.page-load');
   let preloaderParts = $('.page-load_item');
@@ -368,9 +288,107 @@ function runPreloader() {
   });
   tl.to(preloader, { opacity: 0, display: 'none' }, '<');
 }
+function gsapSet() {
+  gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
+}
+function gsapAnimate(element) {
+  const $el = $(element);
+  const tl = gsap.timeline();
 
-// Nav
+  // Heading animation
+  if ($el.is('[data-animation="heading"]')) {
+    const type = $el.attr('data-split-type') || 'line';
+    const typeSplit = new SplitType($el, {
+      types: 'lines, words, chars',
+      tagName: 'span',
+    });
+
+    tl.from($el.find(`.${type}`), {
+      y: '2rem',
+      opacity: 0,
+      duration: 1,
+      ease: 'power3.out',
+      stagger: 0.1,
+    });
+    tl.to(
+      [$el, $el.find(`.${type}`)],
+      {
+        visibility: 'visible',
+      },
+      '<'
+    );
+  }
+
+  // Item animation
+  if ($el.is('[data-animation="item"]')) {
+    const stagger = $el.attr('data-stagger') || 0.2;
+    tl.fromTo(
+      $el,
+      { y: '2rem', opacity: 0 },
+      { y: '0rem', opacity: 1, visibility: 'visible', stagger }
+    );
+  }
+
+  // Stagger animation
+  if ($el.is('[data-animation="stagger"]')) {
+    const staggerItems = $el.find('[data-animation="stagger-item"]');
+    const stagger = $el.attr('data-stagger') || 0.1;
+
+    gsap.set([$el, staggerItems], {
+      visibility: 'visible',
+      immediateRender: true,
+    });
+
+    tl.from(staggerItems, {
+      y: '1rem',
+      opacity: 0,
+      stagger,
+      clearProps: 'visibility',
+      overwrite: 'auto',
+      force3D: true,
+    });
+  }
+
+  // Counter animation
+  if ($el.is('[data-animation="counter"]')) {
+    const scoreText = $el.text();
+    const score = parseFloat(scoreText);
+    const counter = { val: 0 };
+
+    tl.to(counter, {
+      val: score,
+      duration: 1,
+      onStart: () => {
+        gsap.to($el, { opacity: 1 });
+      },
+      onUpdate: function () {
+        $el.text(counter.val.toFixed(0));
+      },
+      ease: 'power2.out',
+    });
+    tl.to($el, { visibility: 'visible' }, '<');
+  }
+
+  // Fade animation
+  if ($el.is('[data-animation="fade"]')) {
+    tl.from($el, { opacity: 0 });
+  }
+
+  return tl;
+}
+// Cleanup function
+function cleanupScrolling() {
+  ScrollTrigger.getAll().forEach((st) => st.kill());
+  if (state.lenis) state.lenis.destroy();
+}
+
+// #endregion
+
+// #region Nav
+const navbar = $('.nav');
 let currentLink;
+
+// Moving shape
 function animateNavBackground(targetLinkText) {
   // Return if we are on same item
   if (currentLink === targetLinkText) return;
@@ -391,8 +409,13 @@ function animateNavBackground(targetLinkText) {
       link.id.toLowerCase() === targetLinkText.toLowerCase()
   );
 
+  console.log('targat-text: ' + targetLinkText);
+
   if (!targetLink || !navContainer || targetLinkText === 'none') {
-    gsap.to(navBg, { opacity: 0 });
+    console.log('target-' + targetLink);
+    console.log('navcontainer-' + navContainer);
+    console.log('target-link-text' + targetLinkText);
+    gsap.set(navBg, { opacity: 0 });
     navLinks.forEach((link) => link.classList.remove('active'));
     return;
   }
@@ -426,6 +449,44 @@ function animateNavBackground(targetLinkText) {
     },
   });
 }
+
+// Scroll bg
+window.onscroll = () => {
+  if (navbar.length && $(window).width() < 992) {
+    if (window.scrollY > $(navbar).height() / 2) {
+      if (!navbar.hasClass('active')) {
+        navbar.addClass('active');
+      }
+    } else {
+      if (navbar.hasClass('active')) {
+        navbar.removeClass('active');
+      }
+    }
+  }
+};
+
+// Click for open Menu
+function createObserver(targetSelector, callback) {
+  const targetNodes = $(targetSelector);
+  targetNodes.each(function () {
+    const observer = new MutationObserver((mutationsList) => {
+      mutationsList.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          callback(mutation.target);
+        }
+      });
+    });
+    observer.observe(this, { attributes: true, attributeFilter: ['class'] }); // Pass the DOM node directly
+  });
+}
+function menuCallback() {
+  if ($('.w-nav-button').hasClass('w--open')) {
+    navbar.addClass('open');
+  } else {
+    navbar.removeClass('open');
+  }
+}
+createObserver('.w-nav-button', menuCallback);
 
 // Scroll Anchors
 $('.nav_menu-link').on('click', function (e) {
@@ -462,11 +523,9 @@ $('.nav_brand').on('click', function () {
   });
 });
 
-// Cleanup function
-function cleanupScrolling() {
-  ScrollTrigger.getAll().forEach((st) => st.kill());
-  if (state.lenis) state.lenis.destroy();
-}
+// #endregion
+
+// #region Modals
 // Modals
 function initModalBasic() {
   const modalGroup = document.querySelector('[data-modal-group-status]');
@@ -541,6 +600,7 @@ function initModalBasic() {
     state.lenis.start();
   }
 }
+// #endregion
 
 // Initialize on document ready
 $(document).ready(function () {
@@ -565,7 +625,7 @@ $(document).ready(function () {
   $(window).on('beforeunload', cleanupScrolling);
 });
 
-// Swipers
+// #region Swipers
 
 import { initSwipers } from './utils/globalFunctions';
 
@@ -625,3 +685,108 @@ const swiperInstances = [
 
 // Initialize swipers with instances specific to this page
 initSwipers(swiperInstances);
+
+// #endregion
+
+// Mobile section pinning
+const initMobilePinning = () => {
+  if (window.innerWidth >= 992) return;
+
+  const sections = $('.section');
+
+  sections.each((index, section) => {
+    if (index === sections.length - 1) return; // Skip last section
+
+    const nextSection = sections[index + 1];
+    const currentHeight = $(section).outerHeight();
+    const isShortSection = currentHeight <= window.innerHeight;
+
+    // Create a wrapper for pinning
+    const $section = $(section);
+    if (!$section.parent('.pin-wrapper').length) {
+      $section.wrap('<div class="pin-wrapper"></div>');
+    }
+    const $wrapper = $section.parent();
+
+    // Copy section's height to wrapper
+    $wrapper.height(currentHeight);
+
+    // Set initial z-index
+    $wrapper.css({ zIndex: 1, position: 'relative' });
+    $(nextSection).css({ zIndex: 2 });
+
+    ScrollTrigger.create({
+      trigger: $wrapper[0],
+      endTrigger: nextSection,
+      // Short sections: pin at top
+      // Long sections: pin when next section appears at bottom
+      start: isShortSection ? 'top top' : 'bottom bottom',
+      // For all sections: unpin when next section hits top
+      end: 'bottom top',
+      pin: true,
+      pinSpacing: false,
+      onEnter: () => {
+        gsap.set($wrapper[0], { zIndex: 1 });
+        gsap.set(nextSection, { zIndex: 2 });
+      },
+      onLeave: () => {
+        gsap.set($wrapper[0], { zIndex: 1 });
+        gsap.set(nextSection, { zIndex: 2 });
+      },
+      onEnterBack: () => {
+        gsap.set($wrapper[0], { zIndex: 1 });
+        gsap.set(nextSection, { zIndex: 2 });
+      },
+      onRefresh: () => {
+        // Update wrapper height if section height changes
+        $wrapper.height($section.outerHeight());
+      },
+    });
+  });
+};
+
+// Init
+$(document).ready(() => {
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Set up other animations first
+  // ... your existing ScrollTrigger animations ...
+
+  // Then initialize pinning
+  initMobilePinning();
+
+  // Reinit on resize
+  let resizeTimeout;
+  $(window).on('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      ScrollTrigger.getAll().forEach((st) => {
+        // Only kill pin triggers, leave other animations
+        if (st.vars.pin) st.kill();
+      });
+      initMobilePinning();
+    }, 250);
+  });
+});
+
+// Required CSS
+/*
+  .pin-wrapper {
+    width: 100%;
+  }
+  
+  .section {
+    width: 100%;
+    background: #fff;
+  }
+  
+  @media screen and (min-width: 992px) {
+    .section {
+      transform: none !important;
+    }
+    
+    .pin-wrapper {
+      transform: none !important;
+    }
+  }
+  */

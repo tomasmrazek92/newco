@@ -8,6 +8,7 @@ let state = {
 // Core initialization
 function initScrolling() {
   cleanupScrolling();
+
   state.isMobile = $(window).width() <= 991;
 
   // Function to get URL parameters
@@ -29,10 +30,6 @@ function initScrolling() {
     touchMultiplier: touchMultiplier,
     smoothWheel: true,
     orientation: state.isMobile ? 'vertical' : 'horizontal',
-  });
-
-  state.lenis.on('scroll', ({ scroll }) => {
-    console.log('Current scroll position:', scroll);
   });
 
   // Set up ScrollTrigger for horizontal scroll
@@ -87,20 +84,26 @@ function initSections() {
       end: state.isMobile ? 'bottom 0%' : 'right center',
       scrub: true,
       onEnter: () => {
-        if (sectionIndex === 0) {
-          $('.btn.cc-nav').addClass('start');
+        if (!state.isMobile) {
+          if (sectionIndex === 0) {
+            $('.btn.cc-nav').addClass('start');
+          }
+          animateNavBackground(sectionLink);
         }
-        animateNavBackground(sectionLink);
       },
       onEnterBack: () => {
-        if (sectionIndex === 0) {
-          $('.btn.cc-nav').addClass('start');
+        if (!state.isMobile) {
+          if (sectionIndex === 0) {
+            $('.btn.cc-nav').addClass('start');
+          }
+          animateNavBackground(sectionLink);
         }
-        animateNavBackground(sectionLink);
       },
       onLeave: () => {
-        if (sectionIndex === 0) {
-          $('.btn.cc-nav').removeClass('start');
+        if (!state.isMobile) {
+          if (sectionIndex === 0) {
+            $('.btn.cc-nav').removeClass('start');
+          }
         }
       },
     };
@@ -271,6 +274,7 @@ function runPreloader() {
           opacity: 0,
         },
         {
+          yPercent: 0,
           opacity: 1,
           stagger: {
             amount: 0.8,
@@ -306,11 +310,15 @@ function runPreloader() {
   tl.to(preloader, { opacity: 0, display: 'none' }, '<');
 }
 function gsapSet() {
-  gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
+  if (!state.isMobile) {
+    gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
+  }
 }
 function gsapAnimate(element) {
   const $el = $(element);
   const tl = gsap.timeline();
+
+  if (state.isMobile) return;
 
   // Heading animation
   if ($el.is('[data-animation="heading"]')) {
@@ -395,6 +403,7 @@ function gsapAnimate(element) {
 }
 // Cleanup function
 function cleanupScrolling() {
+  $('.nav').removeClass('active');
   ScrollTrigger.getAll().forEach((st) => st.kill());
   if (state.lenis) state.lenis.destroy();
 }
@@ -426,12 +435,7 @@ function animateNavBackground(targetLinkText) {
       link.id.toLowerCase() === targetLinkText.toLowerCase()
   );
 
-  console.log('targat-text: ' + targetLinkText);
-
   if (!targetLink || !navContainer || targetLinkText === 'none') {
-    console.log('target-' + targetLink);
-    console.log('navcontainer-' + navContainer);
-    console.log('target-link-text' + targetLinkText);
     $('.nav_menu-bg').css('opacity', '0');
     navLinks.forEach((link) => link.classList.remove('active'));
     return;
@@ -441,8 +445,6 @@ function animateNavBackground(targetLinkText) {
     console.warn('Nav background element not found');
     return;
   }
-
-  console.log(targetLinkText);
 
   // Get the positions relative to the parent container
   const containerRect = navContainer.getBoundingClientRect();
@@ -511,7 +513,6 @@ $('.nav_menu-link').on('click', function (e) {
 
   const linkId = $(this).attr('id');
   const targetSection = $(`.section_part[data-section="${linkId}"]`);
-  console.log(targetSection);
 
   if (targetSection.length && state.lenis) {
     // Get the pin-spacer parent if it exists
@@ -572,7 +573,6 @@ function initModalBasic() {
   modalTargets.forEach((modalTarget) => {
     modalTarget.addEventListener('click', function () {
       const modalTargetName = this.getAttribute('data-modal-target');
-      console.log(modalTargetName);
 
       // Close all modals
       modalTargets.forEach((target) => target.setAttribute('data-modal-status', 'not-active'));
@@ -592,8 +592,6 @@ function initModalBasic() {
 
         $('.team_role-rich-item').hide();
         $('.team_role-rich-item').eq(currentIndex).show();
-
-        console.log(teamName + '-' + teamRole);
       }
 
       // Activate clicked modal

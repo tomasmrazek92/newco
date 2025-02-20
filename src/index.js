@@ -28,7 +28,6 @@ function initScrolling() {
     easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
     touchMultiplier: touchMultiplier,
     smoothWheel: true,
-    syncTouch: true,
     orientation: state.isMobile ? 'vertical' : 'horizontal',
   });
 
@@ -704,19 +703,7 @@ initSwipers(swiperInstances);
 const initMobilePinning = () => {
   if (window.innerWidth >= 992) return;
 
-  // Force better performance settings globally
-  ScrollTrigger.config({
-    limitCallbacks: true,
-    ignoreMobileResize: true,
-  });
-
   const sections = $('.section');
-
-  // Force hardware acceleration for all sections
-  gsap.set(sections, {
-    willChange: 'transform',
-    backfaceVisibility: 'hidden',
-  });
 
   sections.each((index, section) => {
     if (index === sections.length - 1) return; // Skip last section
@@ -732,12 +719,8 @@ const initMobilePinning = () => {
     }
     const $wrapper = $section.parent();
 
-    // Copy section's height to wrapper and add hardware acceleration
+    // Copy section's height to wrapper
     $wrapper.height(currentHeight);
-    gsap.set($wrapper, {
-      willChange: 'transform',
-      backfaceVisibility: 'hidden',
-    });
 
     // Set initial z-index
     $wrapper.css({ zIndex: 1, position: 'relative' });
@@ -750,38 +733,29 @@ const initMobilePinning = () => {
       end: 'bottom top',
       pin: true,
       pinSpacing: false,
-      fastScrollEnd: true,
-      preventOverlaps: true,
-      onEnter: () => {
-        requestAnimationFrame(() => {
-          gsap.set($wrapper[0], { zIndex: 1 });
-          gsap.set(nextSection, { zIndex: 2 });
-        });
-      },
-      onLeave: () => {
-        requestAnimationFrame(() => {
-          gsap.set($wrapper[0], { zIndex: 1 });
-          gsap.set(nextSection, { zIndex: 2 });
-        });
-      },
-      onEnterBack: () => {
-        requestAnimationFrame(() => {
-          gsap.set($wrapper[0], { zIndex: 1 });
-          gsap.set(nextSection, { zIndex: 2 });
-        });
+      scrub: 1, // Add smooth scrubbing
+      anticipatePin: 1, // Help prevent jank
+      onUpdate: (self) => {
+        // Use progress to smoothly handle z-index
+        if (self.progress > 0) {
+          $wrapper.css({ zIndex: 1 });
+          $(nextSection).css({ zIndex: 2 });
+        } else {
+          $wrapper.css({ zIndex: 2 });
+          $(nextSection).css({ zIndex: 1 });
+        }
       },
       onRefresh: () => {
-        requestAnimationFrame(() => {
-          $wrapper.height($section.outerHeight());
-        });
+        $wrapper.height($section.outerHeight());
       },
+      invalidateOnRefresh: true, // Recalculate on refresh
     });
   });
 };
 
 // Init
 $(document).ready(() => {
-  // Register plugin with performance settings
+  // Register plugin
   gsap.registerPlugin(ScrollTrigger);
 
   // Initialize pinning

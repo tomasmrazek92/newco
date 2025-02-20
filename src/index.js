@@ -18,6 +18,7 @@ function initScrolling() {
     easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
     touchMultiplier: 1.5,
     smoothWheel: true,
+    syncTouch: true,
     orientation: state.isMobile ? 'vertical' : 'horizontal',
   });
 
@@ -688,6 +689,7 @@ initSwipers(swiperInstances);
 
 // #endregion
 
+// #region mobileSnap
 // Mobile section pinning
 const initMobilePinning = () => {
   if (window.innerWidth >= 992) return;
@@ -770,25 +772,4 @@ $(document).ready(() => {
     }
   });
 });
-
-// Required CSS
-/*
-  .pin-wrapper {
-    width: 100%;
-  }
-  
-  .section {
-    width: 100%;
-    background: #fff;
-  }
-  
-  @media screen and (min-width: 992px) {
-    .section {
-      transform: none !important;
-    }
-    
-    .pin-wrapper {
-      transform: none !important;
-    }
-  }
-  */
+// #endregion

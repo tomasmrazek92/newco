@@ -16,7 +16,7 @@ function initScrolling() {
     lerp: 1,
     duration: 1,
     easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-    touchMultiplier: 0.5,
+    touchMultiplier: 1,
     smoothWheel: true,
     syncTouch: true,
     orientation: state.isMobile ? 'vertical' : 'horizontal',

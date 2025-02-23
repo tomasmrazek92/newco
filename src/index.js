@@ -265,7 +265,7 @@ function runPreloader() {
       );
       tl.to($(this), {
         opacity: 0,
-        delay: 1,
+        delay: 0.7,
       });
     }
     if (index === 2) {
@@ -281,9 +281,6 @@ function runPreloader() {
         {
           yPercent: 0,
           opacity: 1,
-          stagger: {
-            amount: 0.8,
-          },
         }
       );
       tl.to(
@@ -303,13 +300,34 @@ function runPreloader() {
         '<'
       );
       tl.to(
-        $(this),
+        $(this).find('span'),
         {
+          yPercent: 0,
           opacity: 0,
-          delay: 1.5,
+          stagger: {
+            each: 0.1,
+          },
+          delay: 3,
         },
         '<'
       );
+      tl.to(
+        preLoaderBgTop,
+        {
+          yPercent: -100,
+        },
+        '<'
+      );
+      tl.to(
+        preLoaderBgBottom,
+        {
+          xPercent: 100,
+        },
+        '<'
+      );
+      tl.to($(this), {
+        opacity: 0,
+      });
     }
   });
   tl.to(preloader, { opacity: 0, display: 'none' }, '<');
@@ -398,6 +416,46 @@ function cleanupScrolling() {
   $('.nav').removeClass('active');
   ScrollTrigger.getAll().forEach((st) => st.kill());
   if (state.lenis) state.lenis.destroy();
+}
+
+function animateWave() {
+  const config = {
+    trigger: '.page-main',
+    start: 'left left',
+    end: 'right right',
+    scrub: true,
+  };
+  // Select all paths inside the wave
+  const wavePaths = $('.bottom-wave-img path');
+
+  // Add scroller and horizontal props for desktop
+  if (!state.isMobile) {
+    config.scroller = state.$content[0];
+    config.horizontal = true;
+  }
+
+  const waveTimeline = gsap.timeline({
+    scrollTrigger: config,
+  });
+
+  // Animate each path with a slight delay and different amplitudes
+  wavePaths.each(function (index) {
+    const amplitude = 1 + index * -2; // Subtle vertical movement
+    const xOffset = 5 + index * 30; // More pronounced horizontal movement
+
+    waveTimeline.to(
+      this,
+      {
+        y: `+=${amplitude}`,
+        x: `+=${xOffset}`,
+        duration: 2, // Longer duration for smoother movement
+        ease: 'sine.inOut',
+        yoyo: true,
+        repeat: -1,
+      },
+      index * 0.15
+    ); // Increased stagger for more wave-like effect
+  });
 }
 
 // #endregion

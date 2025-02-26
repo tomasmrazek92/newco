@@ -299,7 +299,7 @@
     navbar;
     wNavBtn;
     navLinks;
-    onScrollBound = this.onScroll.bind(this);
+    onScrollBound;
     _currentSection;
     navContainer;
     navBg;
@@ -310,9 +310,23 @@
       this.navContainer = document.querySelector(".nav_menu-inner");
       this.navBg = document.querySelector(".nav_menu-bg");
       this.contactBtns = document.querySelectorAll(".btn.cc-nav");
+      this.onScrollBound = this.onScroll.bind(this);
       this.navLinks.on("click", (e) => {
         e.preventDefault();
         const linkId = $(e.currentTarget).attr("id");
+        if (this.isMobile) {
+          const targetSection = $(`.section_part[data-section="${linkId}"]`);
+          if (targetSection.length) {
+            const pinSpacer = targetSection.parent(".pin-spacer");
+            let scrollTarget;
+            if (pinSpacer.length) {
+              scrollTarget = pinSpacer.offset().top;
+            } else {
+              scrollTarget = targetSection.offset().top;
+            }
+            gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 2, ease: "power2.out" });
+          }
+        }
         window.dispatchEvent(new CustomEvent("clicked_nav", { detail: linkId }));
       });
       $(".nav_brand").on("click", () => {
@@ -324,7 +338,6 @@
       return this._isMobile;
     }
     set isMobile(val) {
-      this._isMobile = val;
       if (val !== this._isMobile) {
         if (val) {
           window.addEventListener("scroll", this.onScrollBound);
@@ -332,6 +345,7 @@
           window.removeEventListener("scroll", this.onScrollBound);
         }
       }
+      this._isMobile = val;
     }
     get currentSection() {
       return this._currentSection;
@@ -827,7 +841,7 @@
      */
     onResize() {
       const targetSection = this.sections[this.currentSectionIdx];
-      this.targetX = -targetSection.offsetLeft;
+      this.targetX = targetSection.offsetLeft;
       gsap.set(window, {
         scrollTo: { x: this.targetX, y: 0 }
       });
@@ -850,79 +864,33 @@
   /** Amount to strengthen or dampen the scrollwheel strength by when scrolling within a section. */
   __publicField(ScrollSnap, "MIN_SCROLL_STRENGTH", 10);
 
-  // src/Sections.js
+  // src/Animations.js
   var Sections = class {
     currentLink;
     isMobile;
     $content;
+    intObs;
     constructor() {
       this.$content = $(".page-main");
+      this.intObs = new IntersectionObserver(this.onIntersection.bind(this), { threshold: 0.2 });
     }
     init() {
-      $(".section_part").each((i, elm) => {
-        const $section = $(elm);
-        const $allSections = $(".section_part");
-        const sectionIndex = $allSections.index($section);
-        const sectionLink = $section.attr("data-section");
-        const config = {
-          trigger: $section,
-          start: this.isMobile ? "top 80%" : "left center",
-          end: this.isMobile ? "bottom 0%" : "right center",
-          scrub: true
-        };
-        if (!this.isMobile) {
-          config.scroller = this.$content[0];
-          config.horizontal = true;
-        }
-        const tl = gsap.timeline({
-          scrollTrigger: config
-        });
-        if (sectionIndex === 0) {
-          const tl0 = gsap.timeline({
-            scrollTrigger: {
-              ...config,
-              start: this.isMobile ? "top top" : "left left",
-              end: this.isMobile ? "bottom top" : "right left"
-            }
-          });
-          tl0.to(".hero-bg_box", {
-            opacity: 0
-          });
-        }
-        if (sectionIndex === 1) {
-          const tl1 = gsap.timeline({
-            scrollTrigger: {
-              ...config,
-              start: this.isMobile ? "top top" : "left left",
-              end: this.isMobile ? "bottom top" : "right left"
-            }
-          });
-          tl1.from(".bottom-wave-box", {
-            opacity: 0
-          });
-        }
-      });
       $("[data-animation]").each((i, elm) => {
         const $el = $(elm);
         const isHero = $el.closest(".section.cc-hero").length;
-        const config = {
-          trigger: $el,
-          start: this.isMobile ? "top 80%" : "left 80%",
-          scrub: true,
-          onEnter: () => {
-            if (!$el.attr("animated") && !isHero) {
-              $el.attr("animated", "true");
-              gsapAnimate($el, this.isMobile);
-            }
-          }
-        };
-        if (!this.isMobile) {
-          config.scroller = this.$content[0];
-          config.horizontal = true;
+        if (!isHero) {
+          this.intObs.observe(elm);
         }
-        const tl = gsap.timeline({
-          scrollTrigger: config
-        });
+      });
+    }
+    onIntersection(entries, observer) {
+      entries.forEach((entry) => {
+        const elm = entry.target;
+        if (entry.isIntersecting && !elm.hasAttribute("animated")) {
+          elm.setAttribute("animated", "");
+          observer.unobserve(elm);
+          gsapAnimate(elm, this.isMobile);
+        }
       });
     }
   };
@@ -936,7 +904,7 @@
     mobilePinning;
     preloader;
     carousels;
-    sections;
+    animations;
     modals;
     mql;
     nav;
@@ -947,12 +915,15 @@
       this.mobilePinning = new MobilePinning(this.scrollContainer);
       this.preloader = new Preloader();
       this.carousels = new Carousels();
-      this.sections = new Sections();
+      this.animations = new Sections();
       this.modals = new Modals();
       this.nav = new Nav();
       this.initBreakpointListener();
+      if (!this.isMobile) {
+        gsap.set($("[data-animation]").not(".nav"), { visibility: "hidden" });
+      }
       this.preloader.start();
-      this.sections.init();
+      this.animations.init();
       window.addEventListener("go_to_section", this.onScrollToSection.bind(this));
       window.addEventListener("modal_open", this.onModalOpen.bind(this));
       window.addEventListener("modal_closed", this.onModalClosed.bind(this));
@@ -960,7 +931,7 @@
     }
     initBreakpointListener() {
       this.mql = window.matchMedia("(min-width: 992px)");
-      this.mql.addEventListener("change", this.onChangeBreakpoint);
+      this.mql.addEventListener("change", this.onChangeBreakpoint.bind(this));
       this.onChangeBreakpoint(this.mql);
     }
     onModalOpen() {
@@ -992,14 +963,12 @@
     }
     onChangeBreakpoint(e) {
       this.isMobile = !e.matches;
+      this.preloader.isMobile = this.isMobile;
+      this.animations.isMobile = this.isMobile;
+      this.nav.isMobile = this.isMobile;
       if (this.isMobile) {
-        gsap.set($("[data-animation]").not(".nav"), { visibility: "hidden" });
-      } else {
         gsap.set($("[data-animation]").not(".nav"), { visibility: "visible" });
       }
-      this.preloader.isMobile = this.isMobile;
-      this.sections.isMobile = this.isMobile;
-      this.nav.isMobile = this.isMobile;
       if (this.isMobile) {
         this.scrollSnap.kill();
         this.mobilePinning.start();

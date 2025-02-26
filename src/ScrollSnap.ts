@@ -296,7 +296,7 @@ export default class ScrollSnap {
   private onResize() {
     const targetSection = this.sections[this.currentSectionIdx];
 
-    this.targetX = -targetSection.offsetLeft;
+    this.targetX = targetSection.offsetLeft;
 
     gsap.set(window, {
       scrollTo: { x: this.targetX, y: 0 },

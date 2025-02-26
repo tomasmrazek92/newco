@@ -4,7 +4,7 @@ import Modals from './Modals';
 import Nav from './Nav';
 import Preloader from './Preloader';
 import ScrollSnap from './ScrollSnap';
-import Sections from './Sections';
+import Animations from './Animations';
 
 class Main {
   isMobile;
@@ -14,7 +14,7 @@ class Main {
   mobilePinning;
   preloader;
   carousels;
-  sections;
+  animations;
   modals;
   mql;
   nav;
@@ -27,14 +27,18 @@ class Main {
     this.mobilePinning = new MobilePinning(this.scrollContainer);
     this.preloader = new Preloader();
     this.carousels = new Carousels();
-    this.sections = new Sections();
+    this.animations = new Animations();
     this.modals = new Modals();
     this.nav = new Nav();
 
     this.initBreakpointListener(); // at this point, this.isMobile is set
 
+    if (!this.isMobile) {
+      gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
+    }
+
     this.preloader.start();
-    this.sections.init();
+    this.animations.init();
 
     window.addEventListener('go_to_section', this.onScrollToSection.bind(this));
     window.addEventListener('modal_open', this.onModalOpen.bind(this));
@@ -44,7 +48,7 @@ class Main {
 
   initBreakpointListener() {
     this.mql = window.matchMedia('(min-width: 992px)');
-    this.mql.addEventListener('change', this.onChangeBreakpoint);
+    this.mql.addEventListener('change', this.onChangeBreakpoint.bind(this));
     this.onChangeBreakpoint(this.mql);
   }
 
@@ -83,15 +87,13 @@ class Main {
   onChangeBreakpoint(e) {
     this.isMobile = !e.matches;
 
+    this.preloader.isMobile = this.isMobile;
+    this.animations.isMobile = this.isMobile;
+    this.nav.isMobile = this.isMobile;
+
     if (this.isMobile) {
-      gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
-    } else {
       gsap.set($('[data-animation]').not('.nav'), { visibility: 'visible' });
     }
-
-    this.preloader.isMobile = this.isMobile;
-    this.sections.isMobile = this.isMobile;
-    this.nav.isMobile = this.isMobile;
 
     if (this.isMobile) {
       this.scrollSnap.kill();

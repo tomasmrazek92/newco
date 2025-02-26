@@ -3,7 +3,7 @@ export default class Nav {
 	navbar;
 	wNavBtn;
 	navLinks;
-	onScrollBound = this.onScroll.bind(this);
+	onScrollBound;
 	_currentSection;
 	navContainer;
 	navBg;
@@ -15,11 +15,38 @@ export default class Nav {
 		this.navContainer = document.querySelector('.nav_menu-inner');
 		this.navBg = document.querySelector('.nav_menu-bg');
 		this.contactBtns = document.querySelectorAll('.btn.cc-nav');
+		this.onScrollBound = this.onScroll.bind(this);
 
 		this.navLinks.on('click', (e) => {
 			e.preventDefault();
 
 			const linkId = $(e.currentTarget).attr('id');
+
+			if (this.isMobile) {
+				const targetSection = $(`.section_part[data-section="${linkId}"]`);
+
+				if (targetSection.length) {
+					// Get the pin-spacer parent if it exists
+					const pinSpacer = targetSection.parent('.pin-spacer');
+
+					// Calculate the actual scroll position
+					let scrollTarget;
+
+					if (pinSpacer.length) {
+						// If section is pinned, use the pin-spacer's offset
+						scrollTarget = pinSpacer.offset().top;
+					} else {
+						// If section is not pinned, use the section's offset
+						scrollTarget = targetSection.offset().top;
+					}
+
+					// Add any additional offset for fixed headers if needed
+					// const headerOffset = $('.your-header').height(); // Uncomment if needed
+					// scrollTarget -= headerOffset;
+
+					gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 2, ease: 'power2.out' });
+				}
+			}
 
 			window.dispatchEvent(new CustomEvent('clicked_nav', { detail: linkId }));
 		});
@@ -36,8 +63,6 @@ export default class Nav {
 	}
 
 	set isMobile(val) {
-		this._isMobile = val;
-
 		if (val !== this._isMobile) {
 			if (val) {
 				window.addEventListener('scroll', this.onScrollBound);
@@ -45,6 +70,8 @@ export default class Nav {
 				window.removeEventListener('scroll', this.onScrollBound);
 			}
 		}
+
+		this._isMobile = val;
 	}
 
 	get currentSection() {

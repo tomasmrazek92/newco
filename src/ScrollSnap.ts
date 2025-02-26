@@ -1,4 +1,5 @@
 // import { gsap } from 'gsap'; // "Dynamic require of gsap is not supported"?? Maybe because it's also being included separately via a <script>?
+// import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
 enum Dir {
   LEFT,
@@ -13,8 +14,7 @@ enum Dir {
  * Dispatches the following event on the "container" element: 'go_to_section' with the detail property being the index number of the current section.
  *
  * @example
- * const scrollContainer = document.querySelector('.page-main');
- * scrollContainer.addEventListener('go_to_section', (e) => {
+ * window.addEventListener('go_to_section', (e) => {
  *  // e.detail == the index number of the current section
  *  console.log('going to section', e.detail);
  * })
@@ -25,17 +25,15 @@ enum Dir {
  * scrollSnap.gotoIdx(0);
  */
 export default class ScrollSnap {
+  // #region Properties
+  // ==============================================================
   // Config
-  static readonly SCROLL_DUR = 0.4; /** Speed at which scroll animation happens (in seconds) */
+  static readonly SCROLL_DUR = 0.6; /** Speed at which scroll animation happens (in seconds) */
   static readonly SCROLL_EASE_BETWEEN_SECTIONS: gsap.EaseString =
     'power2.out'; /** Easing method of scroll animation from one section to another. From GSAP. */
   static readonly SCROLL_EASE_WITHIN_SECTION = 0.1; /** The easing strength when scrolling within a long section. */
   static readonly SCROLL_STRENGTH_MULTIPLIER = 0.6; /** Amount to strengthen or dampen the scrollwheel strength by when scrolling within a section. */
   static readonly MIN_SCROLL_STRENGTH = 10; /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
-
-  // DOM elements
-  private container: HTMLElement; /** Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted. */
-  private sections: NodeListOf<HTMLElement>; /** The blades within that determine where the stop points are. */
 
   // State
   private isAnimating = false;
@@ -46,43 +44,43 @@ export default class ScrollSnap {
   private targetX = 0;
 
   // Listeners
+  private onScrollBound = this.onScroll.bind(this);
   private onMouseWheelBound = this.onMouseWheel.bind(this);
   private onKeyDownBound = this.onKeyDown.bind(this);
-  private onChangeBreakpointBound = this.onChangeBreakpoint.bind(this);
   private onResizeBound = this.onResize.bind(this);
-
-  // Lifecycle
   // ==============================================================
-  constructor() {
-    this.container = document.querySelector('.page-main') as HTMLElement;
-    this.sections = document.querySelectorAll('.section-snap');
+  // #endregion Properties
 
-    const mql = window.matchMedia('(min-width: 992px)');
-    mql.addEventListener('change', this.onChangeBreakpointBound);
-
-    if (mql.matches) {
-      this.init();
-    }
+  // #region Lifecycle
+  // ==============================================================
+  /**
+   *
+   * @param container Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted.
+   * @param sections The blades within that determine where the stop points are.
+   */
+  constructor(private container: HTMLElement, private sections: NodeListOf<HTMLElement>) {
+    gsap.registerPlugin(ScrollToPlugin);
   }
+  // ==============================================================
+  // #endregion Lifecycle
 
-  private init() {
-    window.addEventListener('wheel', this.onMouseWheelBound);
-    window.addEventListener('keydown', this.onKeyDownBound);
+  // #region Public methods
+  // ==============================================================
+  public start() {
+    window.addEventListener('scroll', this.onScrollBound);
+    window.addEventListener('wheel', this.onMouseWheelBound, { passive: false });
+    window.addEventListener('keydown', this.onKeyDownBound, { passive: false });
     window.addEventListener('resize', this.onResizeBound);
   }
 
-  private kill() {
+  public kill() {
+    window.removeEventListener('scroll', this.onScrollBound);
     window.removeEventListener('wheel', this.onMouseWheelBound);
     window.removeEventListener('keydown', this.onKeyDownBound);
     window.removeEventListener('resize', this.onResizeBound);
-    gsap.killTweensOf(this.container);
-    this.container.style.transform = 'none';
+    gsap.killTweensOf(window);
   }
-  // ==============================================================
-  // End Lifecycle
 
-  // Public methods
-  // ==============================================================
   /**
    * Animate to a target section
    * @param targetSectionIdx index of `this.sections` to animate to
@@ -102,15 +100,15 @@ export default class ScrollSnap {
 
     const targetSection = this.sections[this.currentSectionIdx];
 
-    this.targetX = -targetSection.offsetLeft;
+    this.targetX = targetSection.offsetLeft;
 
     // If we're scrolling backwards and the target section is wider than the viewport, go to the end of it
     if (fromScrollEvent && dir === Dir.LEFT && targetSection.offsetWidth > window.innerWidth) {
-      this.targetX = -(targetSection.offsetLeft + targetSection.offsetWidth - window.innerWidth);
+      this.targetX = targetSection.offsetLeft + targetSection.offsetWidth - window.innerWidth;
     }
 
-    gsap.to(this.container, {
-      x: this.targetX,
+    gsap.to(window, {
+      scrollTo: { x: this.targetX, y: 0 },
       duration: instant ? 0 : ScrollSnap.SCROLL_DUR,
       ease: ScrollSnap.SCROLL_EASE_BETWEEN_SECTIONS,
       onComplete: () => {
@@ -118,12 +116,12 @@ export default class ScrollSnap {
       },
     });
 
-    this.container.dispatchEvent(new CustomEvent('go_to_section', { detail: targetSectionIdx }));
+    window.dispatchEvent(new CustomEvent('go_to_section', { detail: targetSectionIdx }));
   }
   // ==============================================================
-  // End Public methods
+  // #endregion End Public methods
 
-  // Private methods
+  // #region Private methods
   // ==============================================================
   /**
    * We're within a section that's wider than the viewport. Smooth the scrolling within it.
@@ -145,11 +143,11 @@ export default class ScrollSnap {
       return true;
     }
 
-    this.targetX -= scrollStrength * ScrollSnap.SCROLL_STRENGTH_MULTIPLIER;
+    this.targetX += scrollStrength * ScrollSnap.SCROLL_STRENGTH_MULTIPLIER;
 
     const currentSection = this.sections[this.currentSectionIdx];
-    const minX = -(currentSection.offsetLeft + currentSection.offsetWidth - window.innerWidth);
-    const maxX = -currentSection.offsetLeft;
+    const minX = currentSection.offsetLeft;
+    const maxX = currentSection.offsetLeft + currentSection.offsetWidth - window.innerWidth;
     this.targetX = this.clamp(minX, this.targetX, maxX);
 
     if (!this.isScrollingWithinSection) {
@@ -158,12 +156,12 @@ export default class ScrollSnap {
     }
 
     // Return whether or not we should still consider ourselves "within" the section
-    const currentX = gsap.getProperty(this.container, 'x') as number;
+    const currentX = window.scrollX;
     const buffer = 30;
 
     return (
-      (dir === Dir.LEFT && currentX < maxX - buffer) ||
-      (dir === Dir.RIGHT && currentX > minX + buffer)
+      (dir === Dir.LEFT && currentX > minX + buffer) ||
+      (dir === Dir.RIGHT && currentX < maxX - buffer)
     );
   }
 
@@ -171,12 +169,12 @@ export default class ScrollSnap {
    * Ease between a current value and a target value
    */
   private smoothScrollWithinSection() {
-    const currentX = gsap.getProperty(this.container, 'x') as number;
+    const currentX = window.scrollX;
     const deltaX = this.targetX - currentX;
 
     const EASING = ScrollSnap.SCROLL_EASE_WITHIN_SECTION;
 
-    gsap.set(this.container, { x: currentX + deltaX * EASING });
+    gsap.set(window, { scrollTo: { x: currentX + deltaX * EASING, y: 0 } });
 
     if (this.isScrollingWithinSection) {
       requestAnimationFrame(this.smoothScrollWithinSection.bind(this));
@@ -208,14 +206,22 @@ export default class ScrollSnap {
     return Math.min(Math.max(val, min), max);
   }
   // ==============================================================
-  // End Private methods
+  // #endregion End Private methods
 
-  // Event Listeners
+  // #region Event Listeners
   // ==============================================================
+  private onScroll(e: Event) {
+    // TODO: although we override scrolling via the mousewheel and keyboard, there's nothing stopping the user from manually scrolling via the scrollbar
+    // we need to take that into account and recalculate what the current section index is based on which is the most visible one
+  }
+
   /**
    * On mouse wheel interaction, figure out which way we're scrolling.
    */
   private onMouseWheel(e: WheelEvent) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
     const scrollStrength = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
 
     // ignore micro-scrolls. Ratcheting mice sometimes throw a super tiny scroll event in the opposite direction at the end of the scroll.
@@ -285,17 +291,6 @@ export default class ScrollSnap {
   }
 
   /**
-   * Changing between desktop/mobile breakpoints
-   */
-  private onChangeBreakpoint(e: MediaQueryListEvent) {
-    if (e.matches) {
-      this.init();
-    } else {
-      this.kill();
-    }
-  }
-
-  /**
    * Window resize event handler
    */
   private onResize() {
@@ -303,12 +298,12 @@ export default class ScrollSnap {
 
     this.targetX = -targetSection.offsetLeft;
 
-    gsap.set(this.container, {
-      x: this.targetX,
+    gsap.set(window, {
+      scrollTo: { x: this.targetX, y: 0 },
     });
 
     this.isAnimating = false;
   }
   // ==============================================================
-  // End Event Listeners
+  // #endregion End Event Listeners
 }

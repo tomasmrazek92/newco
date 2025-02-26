@@ -12,12 +12,21 @@
 
   // src/ScrollSnap.ts
   var _ScrollSnap = class {
+    // ==============================================================
+    // #endregion Properties
+    // #region Lifecycle
+    // ==============================================================
+    /**
+     *
+     * @param container Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted.
+     * @param sections The blades within that determine where the stop points are.
+     */
+    constructor(container, sections) {
+      this.container = container;
+      this.sections = sections;
+      gsap.registerPlugin(ScrollToPlugin);
+    }
     /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
-    // DOM elements
-    container;
-    /** Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted. */
-    sections;
-    /** The blades within that determine where the stop points are. */
     // State
     isAnimating = false;
     isScrollingWithinSection = false;
@@ -27,37 +36,27 @@
     prevScrollStrength = 0;
     targetX = 0;
     // Listeners
+    onScrollBound = this.onScroll.bind(this);
     onMouseWheelBound = this.onMouseWheel.bind(this);
     onKeyDownBound = this.onKeyDown.bind(this);
-    onChangeBreakpointBound = this.onChangeBreakpoint.bind(this);
     onResizeBound = this.onResize.bind(this);
-    // Lifecycle
     // ==============================================================
-    constructor() {
-      this.container = document.querySelector(".page-main");
-      this.sections = document.querySelectorAll(".section-snap");
-      const mql = window.matchMedia("(min-width: 992px)");
-      mql.addEventListener("change", this.onChangeBreakpointBound);
-      if (mql.matches) {
-        this.init();
-      }
-    }
-    init() {
-      window.addEventListener("wheel", this.onMouseWheelBound);
-      window.addEventListener("keydown", this.onKeyDownBound);
+    // #endregion Lifecycle
+    // #region Public methods
+    // ==============================================================
+    start() {
+      window.addEventListener("scroll", this.onScrollBound);
+      window.addEventListener("wheel", this.onMouseWheelBound, { passive: false });
+      window.addEventListener("keydown", this.onKeyDownBound, { passive: false });
       window.addEventListener("resize", this.onResizeBound);
     }
     kill() {
+      window.removeEventListener("scroll", this.onScrollBound);
       window.removeEventListener("wheel", this.onMouseWheelBound);
       window.removeEventListener("keydown", this.onKeyDownBound);
       window.removeEventListener("resize", this.onResizeBound);
-      gsap.killTweensOf(this.container);
-      this.container.style.transform = "none";
+      gsap.killTweensOf(window);
     }
-    // ==============================================================
-    // End Lifecycle
-    // Public methods
-    // ==============================================================
     /**
      * Animate to a target section
      * @param targetSectionIdx index of `this.sections` to animate to
@@ -73,23 +72,23 @@
       this.isAnimating = !instant;
       this.isScrollingWithinSection = false;
       const targetSection = this.sections[this.currentSectionIdx];
-      this.targetX = -targetSection.offsetLeft;
+      this.targetX = targetSection.offsetLeft;
       if (fromScrollEvent && dir === 0 /* LEFT */ && targetSection.offsetWidth > window.innerWidth) {
-        this.targetX = -(targetSection.offsetLeft + targetSection.offsetWidth - window.innerWidth);
+        this.targetX = targetSection.offsetLeft + targetSection.offsetWidth - window.innerWidth;
       }
-      gsap.to(this.container, {
-        x: this.targetX,
+      gsap.to(window, {
+        scrollTo: { x: this.targetX, y: 0 },
         duration: instant ? 0 : _ScrollSnap.SCROLL_DUR,
         ease: _ScrollSnap.SCROLL_EASE_BETWEEN_SECTIONS,
         onComplete: () => {
           this.isAnimating = false;
         }
       });
-      this.container.dispatchEvent(new CustomEvent("go_to_section", { detail: targetSectionIdx }));
+      window.dispatchEvent(new CustomEvent("go_to_section", { detail: targetSectionIdx }));
     }
     // ==============================================================
-    // End Public methods
-    // Private methods
+    // #endregion End Public methods
+    // #region Private methods
     // ==============================================================
     /**
      * We're within a section that's wider than the viewport. Smooth the scrolling within it.
@@ -103,27 +102,27 @@
       if (!this.isScrollingWithinSection && Math.abs(scrollStrength) < this.prevScrollStrength && dir === this.prevDir) {
         return true;
       }
-      this.targetX -= scrollStrength * _ScrollSnap.SCROLL_STRENGTH_MULTIPLIER;
+      this.targetX += scrollStrength * _ScrollSnap.SCROLL_STRENGTH_MULTIPLIER;
       const currentSection = this.sections[this.currentSectionIdx];
-      const minX = -(currentSection.offsetLeft + currentSection.offsetWidth - window.innerWidth);
-      const maxX = -currentSection.offsetLeft;
+      const minX = currentSection.offsetLeft;
+      const maxX = currentSection.offsetLeft + currentSection.offsetWidth - window.innerWidth;
       this.targetX = this.clamp(minX, this.targetX, maxX);
       if (!this.isScrollingWithinSection) {
         this.isScrollingWithinSection = true;
         this.smoothScrollWithinSection();
       }
-      const currentX = gsap.getProperty(this.container, "x");
+      const currentX = window.scrollX;
       const buffer = 30;
-      return dir === 0 /* LEFT */ && currentX < maxX - buffer || dir === 1 /* RIGHT */ && currentX > minX + buffer;
+      return dir === 0 /* LEFT */ && currentX > minX + buffer || dir === 1 /* RIGHT */ && currentX < maxX - buffer;
     }
     /**
      * Ease between a current value and a target value
      */
     smoothScrollWithinSection() {
-      const currentX = gsap.getProperty(this.container, "x");
+      const currentX = window.scrollX;
       const deltaX = this.targetX - currentX;
       const EASING = _ScrollSnap.SCROLL_EASE_WITHIN_SECTION;
-      gsap.set(this.container, { x: currentX + deltaX * EASING });
+      gsap.set(window, { scrollTo: { x: currentX + deltaX * EASING, y: 0 } });
       if (this.isScrollingWithinSection) {
         requestAnimationFrame(this.smoothScrollWithinSection.bind(this));
       }
@@ -150,13 +149,17 @@
       return Math.min(Math.max(val, min), max);
     }
     // ==============================================================
-    // End Private methods
-    // Event Listeners
+    // #endregion End Private methods
+    // #region Event Listeners
     // ==============================================================
+    onScroll(e) {
+    }
     /**
      * On mouse wheel interaction, figure out which way we're scrolling.
      */
     onMouseWheel(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
       const scrollStrength = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
       if (Math.abs(scrollStrength) < _ScrollSnap.MIN_SCROLL_STRENGTH) {
         this.prevScrollStrength = 0;
@@ -203,32 +206,24 @@
       this.go(dir);
     }
     /**
-     * Changing between desktop/mobile breakpoints
-     */
-    onChangeBreakpoint(e) {
-      if (e.matches) {
-        this.init();
-      } else {
-        this.kill();
-      }
-    }
-    /**
      * Window resize event handler
      */
     onResize() {
       const targetSection = this.sections[this.currentSectionIdx];
       this.targetX = -targetSection.offsetLeft;
-      gsap.set(this.container, {
-        x: this.targetX
+      gsap.set(window, {
+        scrollTo: { x: this.targetX, y: 0 }
       });
       this.isAnimating = false;
     }
     // ==============================================================
-    // End Event Listeners
+    // #endregion End Event Listeners
   };
   var ScrollSnap = _ScrollSnap;
+  // #region Properties
+  // ==============================================================
   // Config
-  __publicField(ScrollSnap, "SCROLL_DUR", 0.4);
+  __publicField(ScrollSnap, "SCROLL_DUR", 0.6);
   /** Speed at which scroll animation happens (in seconds) */
   __publicField(ScrollSnap, "SCROLL_EASE_BETWEEN_SECTIONS", "power2.out");
   /** Easing method of scroll animation from one section to another. From GSAP. */

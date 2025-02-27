@@ -20743,6 +20743,8 @@ void main() {
     meshTop;
     meshBottom;
     _currentSection;
+    _isMobile;
+    preloaderComplete = false;
     constructor() {
       const canvas = document.createElement("canvas");
       canvas.classList.add("webgl");
@@ -20806,9 +20808,13 @@ void main() {
         if (this.meshTop) {
           this.meshTop.material.uniforms.uManualTime.value += 25e-4;
         }
-        this.meshBottom.material.uniforms.uManualTime.value += 22e-4;
-        renderer.render(this.scene, camera);
-        window.requestAnimationFrame(tick);
+        if (this.meshBottom) {
+          this.meshBottom.material.uniforms.uManualTime.value += 22e-4;
+        }
+        if (this.meshTop || this.meshBottom) {
+          renderer.render(this.scene, camera);
+          window.requestAnimationFrame(tick);
+        }
       };
       tick();
       this.initAnim();
@@ -20838,6 +20844,15 @@ void main() {
       this.scene.add(mesh);
       return mesh;
     }
+    get isMobile() {
+      return this._isMobile;
+    }
+    set isMobile(val) {
+      if (this.preloaderComplete) {
+        this.showHideBottomMesh(val ? 0 : 1);
+      }
+      this._isMobile = val;
+    }
     initAnim() {
       gsap.to(this.meshTop.material.uniforms.uOpacity, { value: 1, duration: 2, ease: "linear" });
       gsap.to(this.meshBottom.material.uniforms.uOpacity, {
@@ -20847,6 +20862,7 @@ void main() {
       });
     }
     onPreloaderComplete() {
+      this.preloaderComplete = true;
       if (this.meshTop) {
         gsap.killTweensOf(this.meshTop.material.uniforms.uOpacity);
         gsap.to(this.meshTop.material.uniforms.uOpacity, {
@@ -20861,6 +20877,23 @@ void main() {
           }
         });
       }
+      if (this.meshBottom && this.isMobile) {
+        this.showHideBottomMesh(0);
+      }
+    }
+    showHideBottomMesh(opacity) {
+      gsap.killTweensOf(this.meshBottom.material.uniforms.uOpacity);
+      gsap.to(this.meshBottom.material.uniforms.uOpacity, {
+        value: opacity,
+        duration: 1,
+        ease: "linear"
+        // onComplete: () => {
+        //   this.meshBottom.geometry.dispose();
+        //   this.meshBottom.material.dispose();
+        //   this.scene.remove(this.meshBottom);
+        //   this.meshBottom = null;
+        // },
+      });
     }
   };
 
@@ -20952,6 +20985,7 @@ void main() {
       this.preloader.isMobile = this.isMobile;
       this.animations.isMobile = this.isMobile;
       this.nav.isMobile = this.isMobile;
+      this.waveAnim.isMobile = this.isMobile;
       if (this.isMobile) {
         gsap.set($("[data-animation]").not(".nav"), { visibility: "visible" });
       }

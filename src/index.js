@@ -113,6 +113,7 @@ class Main {
     this.preloader.isMobile = this.isMobile;
     this.animations.isMobile = this.isMobile;
     this.nav.isMobile = this.isMobile;
+    this.waveAnim.isMobile = this.isMobile;
 
     if (this.isMobile) {
       gsap.set($('[data-animation]').not('.nav'), { visibility: 'visible' });

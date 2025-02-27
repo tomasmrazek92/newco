@@ -9,6 +9,8 @@ export default class WaveAnim {
   meshTop;
   meshBottom;
   _currentSection;
+  _isMobile;
+  preloaderComplete = false;
 
   constructor() {
     // Canvas
@@ -108,11 +110,14 @@ export default class WaveAnim {
         this.meshTop.material.uniforms.uManualTime.value += 0.0025;
       }
 
-      this.meshBottom.material.uniforms.uManualTime.value += 0.0022;
+      if (this.meshBottom) {
+        this.meshBottom.material.uniforms.uManualTime.value += 0.0022;
+      }
 
-      renderer.render(this.scene, camera);
-
-      window.requestAnimationFrame(tick);
+      if (this.meshTop || this.meshBottom) {
+        renderer.render(this.scene, camera);
+        window.requestAnimationFrame(tick);
+      }
     };
 
     tick();
@@ -148,6 +153,18 @@ export default class WaveAnim {
     return mesh;
   }
 
+  get isMobile() {
+    return this._isMobile;
+  }
+
+  set isMobile(val) {
+    if (this.preloaderComplete) {
+      this.showHideBottomMesh(val ? 0.0 : 1.0);
+    }
+
+    this._isMobile = val;
+  }
+
   initAnim() {
     gsap.to(this.meshTop.material.uniforms.uOpacity, { value: 1.0, duration: 2, ease: 'linear' });
     gsap.to(this.meshBottom.material.uniforms.uOpacity, {
@@ -158,6 +175,8 @@ export default class WaveAnim {
   }
 
   onPreloaderComplete() {
+    this.preloaderComplete = true;
+
     if (this.meshTop) {
       gsap.killTweensOf(this.meshTop.material.uniforms.uOpacity);
       gsap.to(this.meshTop.material.uniforms.uOpacity, {
@@ -172,5 +191,24 @@ export default class WaveAnim {
         },
       });
     }
+
+    if (this.meshBottom && this.isMobile) {
+      this.showHideBottomMesh(0.0);
+    }
+  }
+
+  showHideBottomMesh(opacity) {
+    gsap.killTweensOf(this.meshBottom.material.uniforms.uOpacity);
+    gsap.to(this.meshBottom.material.uniforms.uOpacity, {
+      value: opacity,
+      duration: 1,
+      ease: 'linear',
+      // onComplete: () => {
+      //   this.meshBottom.geometry.dispose();
+      //   this.meshBottom.material.dispose();
+      //   this.scene.remove(this.meshBottom);
+      //   this.meshBottom = null;
+      // },
+    });
   }
 }

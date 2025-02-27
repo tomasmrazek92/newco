@@ -5,6 +5,7 @@ import Nav from './Nav';
 import Preloader from './Preloader';
 import ScrollSnap from './ScrollSnap';
 import Animations from './Animations';
+import WaveAnim from './WaveAnim';
 
 class Main {
   isMobile;
@@ -18,6 +19,7 @@ class Main {
   modals;
   mql;
   nav;
+  waveAnim;
 
   constructor() {
     this.scrollContainer = document.querySelector('.page-main');
@@ -30,6 +32,7 @@ class Main {
     this.animations = new Animations();
     this.modals = new Modals();
     this.nav = new Nav();
+    this.waveAnim = new WaveAnim();
 
     this.initBreakpointListener(); // at this point, this.isMobile is set
 
@@ -37,13 +40,14 @@ class Main {
       gsap.set($('[data-animation]').not('.nav'), { visibility: 'hidden' });
     }
 
-    this.preloader.start();
-    this.animations.init();
-
+    window.addEventListener('preloader_complete', this.onPreloaderComplete.bind(this));
     window.addEventListener('go_to_section', this.onScrollToSection.bind(this));
     window.addEventListener('modal_open', this.onModalOpen.bind(this));
     window.addEventListener('modal_closed', this.onModalClosed.bind(this));
     window.addEventListener('clicked_nav', this.onClickedNav.bind(this));
+
+    this.preloader.start();
+    this.animations.init();
   }
 
   initBreakpointListener() {
@@ -78,10 +82,14 @@ class Main {
     }
   }
 
+  onPreloaderComplete() {
+    this.waveAnim.onPreloaderComplete();
+  }
+
   onScrollToSection(e) {
     const currentSection = this.scrollSections[e.detail];
-    const parentSection = currentSection.closest('.section_part');
-    this.nav.currentSection = parentSection.dataset.section;
+    const parentSection = currentSection.closest('.section_part').dataset.section;
+    this.nav.currentSection = parentSection;
   }
 
   onChangeBreakpoint(e) {

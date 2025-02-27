@@ -7,6 +7,7 @@ export default class Preloader {
 
   constructor() {
     this.skip = window.sessionStorage.getItem(this.SEEN_PRELOADED_KEY) === 'true';
+    // this.skip = false;
     window.sessionStorage.setItem(this.SEEN_PRELOADED_KEY, 'true');
   }
 
@@ -15,6 +16,11 @@ export default class Preloader {
     let preloaderParts = $('.page-load_item');
     let preLoaderBgTop = $('.page-load_bg.cc-top');
     let preLoaderBgBottom = $('.page-load_bg.cc-bottom');
+    let mainContent = $('.page-main');
+    let sections = $('.section');
+    let nav = $('.nav_wrapper');
+
+    window.dispatchEvent(new CustomEvent('preloader_begin'));
 
     let tl = gsap.timeline({
       onComplete: () => {
@@ -22,8 +28,13 @@ export default class Preloader {
         heroItems.each((i, elm) => {
           gsapAnimate($(elm), this.isMobile);
         });
+        window.dispatchEvent(new CustomEvent('preloader_complete'));
       },
     });
+
+    mainContent[0].style.display = 'flex';
+    gsap.set(sections, { autoAlpha: 0 });
+    gsap.set(nav, { autoAlpha: 0 });
 
     preloaderParts.each(function (index) {
       if (index === 0) {
@@ -158,7 +169,9 @@ export default class Preloader {
         });
       }
     });
-    tl.to(preloader, { opacity: 0, display: 'none' }, '<');
+    tl.to(preloader, { autoAlpha: 0, duration: 1, ease: 'linear' }, '<');
+    tl.to(sections, { autoAlpha: 1, duration: 1, ease: 'linear' }, '<');
+    tl.to(nav, { autoAlpha: 1, display: 'block', duration: 1, ease: 'linear' }, '<');
 
     if (this.skip) {
       tl.progress(1);

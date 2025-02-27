@@ -1,6 +1,7 @@
 import * as esbuild from 'esbuild';
 import { readdirSync } from 'fs';
 import { join, sep } from 'path';
+import { glsl } from "esbuild-plugin-glsl";
 
 // Config output
 const BUILD_DIRECTORY = 'dist';
@@ -27,6 +28,9 @@ const context = await esbuild.context({
     SERVE_ORIGIN: JSON.stringify(SERVE_ORIGIN),
   },
   external: ['jquery', 'gsap', 'gsap/ScrollTrigger', 'gsap/ScrollTo', 'swiper'],
+  plugins: [glsl({
+    minify: true
+  })],
 });
 
 // Build files in prod

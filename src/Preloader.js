@@ -6,9 +6,13 @@ export default class Preloader {
   skip;
 
   constructor() {
-    this.skip = window.sessionStorage.getItem(this.SEEN_PRELOADED_KEY) === 'true';
+    this.skip =
+      window.sessionStorage.getItem(this.SEEN_PRELOADED_KEY) === 'true' ||
+      document.location.hash !== '';
     // this.skip = false;
-    window.sessionStorage.setItem(this.SEEN_PRELOADED_KEY, 'true');
+    if (!this.skip) {
+      window.sessionStorage.setItem(this.SEEN_PRELOADED_KEY, 'true');
+    }
   }
 
   start() {

@@ -22,31 +22,9 @@ export default class Nav {
 
       const linkId = $(e.currentTarget).attr('id');
 
-      if (this.isMobile) {
-        const targetSection = $(`.section_part[data-section="${linkId}"]`);
+      this.mobileScrollToSection(linkId);
 
-        if (targetSection.length) {
-          // Get the pin-spacer parent if it exists
-          const pinSpacer = targetSection.parent('.pin-spacer');
-
-          // Calculate the actual scroll position
-          let scrollTarget;
-
-          if (pinSpacer.length) {
-            // If section is pinned, use the pin-spacer's offset
-            scrollTarget = pinSpacer.offset().top;
-          } else {
-            // If section is not pinned, use the section's offset
-            scrollTarget = targetSection.offset().top;
-          }
-
-          // Add any additional offset for fixed headers if needed
-          // const headerOffset = $('.your-header').height(); // Uncomment if needed
-          // scrollTarget -= headerOffset;
-
-          gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 2, ease: 'power2.out' });
-        }
-      }
+      window.history.pushState({}, '', `${document.location.origin}#${linkId}`);
 
       window.dispatchEvent(new CustomEvent('clicked_nav', { detail: linkId }));
     });
@@ -56,6 +34,8 @@ export default class Nav {
     });
 
     this.createObserver(this.wNavBtn, this.menuCallback.bind(this));
+
+    window.addEventListener('hashchange', this.deepLink.bind(this));
   }
 
   get isMobile() {
@@ -86,6 +66,48 @@ export default class Nav {
     targetLink.addClass('active');
     this.animateNavBackground(targetLink[0]);
     this.updateContactBtn(section);
+  }
+
+  deepLink() {
+    let linkId = document.location.hash.substring(1);
+    if (linkId === 'top') {
+      linkId = 'none';
+    }
+    if (linkId.trim() !== '') {
+      window.dispatchEvent(new CustomEvent('clicked_nav', { detail: linkId }));
+    }
+  }
+
+  mobileScrollToSection(linkId) {
+    if (this.isMobile) {
+      if (linkId === 'top') {
+        linkId = 'none';
+      }
+
+      const targetSection = $(`.section_part[data-section="${linkId}"]`);
+
+      if (targetSection.length) {
+        // Get the pin-spacer parent if it exists
+        const pinSpacer = targetSection.parent('.pin-spacer');
+
+        // Calculate the actual scroll position
+        let scrollTarget;
+
+        if (pinSpacer.length) {
+          // If section is pinned, use the pin-spacer's offset
+          scrollTarget = pinSpacer.offset().top;
+        } else {
+          // If section is not pinned, use the section's offset
+          scrollTarget = targetSection.offset().top;
+        }
+
+        // Add any additional offset for fixed headers if needed
+        // const headerOffset = $('.your-header').height(); // Uncomment if needed
+        // scrollTarget -= headerOffset;
+
+        gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 2, ease: 'power2.out' });
+      }
+    }
   }
 
   createObserver(targetNodes, callback) {

@@ -48,6 +48,7 @@ class Main {
 
     this.preloader.start();
     this.animations.init();
+    this.nav.deepLink();
   }
 
   initBreakpointListener() {
@@ -92,6 +93,12 @@ class Main {
     const currentSection = this.scrollSections[e.detail];
     const parentSection = currentSection.closest('.section_part').dataset.section;
     this.nav.currentSection = parentSection;
+
+    window.history.replaceState(
+      {},
+      '',
+      `${document.location.origin}#${parentSection === 'none' ? 'top' : parentSection}`
+    );
   }
 
   onChangeBreakpoint(e) {

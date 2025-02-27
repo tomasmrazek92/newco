@@ -1,10 +1,10 @@
+import Animations from './Animations';
 import Carousels from './Carousels';
 import MobilePinning from './MobilePinning';
 import Modals from './Modals';
 import Nav from './Nav';
 import Preloader from './Preloader';
 import ScrollSnap from './ScrollSnap';
-import Animations from './Animations';
 import WaveAnim from './WaveAnim';
 
 class Main {
@@ -76,8 +76,10 @@ class Main {
     const sectionId = e.detail;
 
     if (!this.isMobile) {
-      const section = document.querySelector(`[data-section=${sectionId}]`).querySelectorAll('.section')[0];
-      const sectionIdx = [...this.scrollSections].findIndex(s => s === section);
+      const section = document
+        .querySelector(`[data-section=${sectionId}]`)
+        .querySelectorAll('.section')[0];
+      const sectionIdx = [...this.scrollSections].findIndex((s) => s === section);
       this.scrollSnap.gotoIdx(sectionIdx, true);
     }
   }

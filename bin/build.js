@@ -1,14 +1,14 @@
 import * as esbuild from 'esbuild';
+import { glsl } from 'esbuild-plugin-glsl';
 import { readdirSync } from 'fs';
 import { join, sep } from 'path';
-import { glsl } from "esbuild-plugin-glsl";
 
 // Config output
 const BUILD_DIRECTORY = 'dist';
 const PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Config entrypoint files
-const ENTRY_POINTS = ['src/index.js', 'src/snap-test.js'];
+const ENTRY_POINTS = ['src/index.js'];
 
 // Config dev serving
 const LIVE_RELOAD = !PRODUCTION;
@@ -28,9 +28,11 @@ const context = await esbuild.context({
     SERVE_ORIGIN: JSON.stringify(SERVE_ORIGIN),
   },
   external: ['jquery', 'gsap', 'gsap/ScrollTrigger', 'gsap/ScrollTo', 'swiper'],
-  plugins: [glsl({
-    minify: true
-  })],
+  plugins: [
+    glsl({
+      minify: true,
+    }),
+  ],
 });
 
 // Build files in prod

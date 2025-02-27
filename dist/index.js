@@ -20878,6 +20878,7 @@ void main() {
     mql;
     nav;
     waveAnim;
+    preloaderComplete = false;
     constructor() {
       this.scrollContainer = document.querySelector(".page-main");
       this.scrollSections = document.querySelectorAll(".section");
@@ -20889,6 +20890,7 @@ void main() {
       this.modals = new Modals();
       this.nav = new Nav();
       this.waveAnim = new WaveAnim();
+      document.body.style.overflow = "hidden";
       this.initBreakpointListener();
       if (!this.isMobile) {
         gsap.set($("[data-animation]").not(".nav"), { visibility: "hidden" });
@@ -20930,7 +20932,10 @@ void main() {
       }
     }
     onPreloaderComplete() {
+      this.preloaderComplete = true;
+      document.body.style.overflow = "";
       this.waveAnim.onPreloaderComplete();
+      this.onChangeBreakpoint(this.mql);
     }
     onScrollToSection(e) {
       const currentSection = this.scrollSections[e.detail];
@@ -20949,6 +20954,9 @@ void main() {
       this.nav.isMobile = this.isMobile;
       if (this.isMobile) {
         gsap.set($("[data-animation]").not(".nav"), { visibility: "visible" });
+      }
+      if (!this.preloaderComplete) {
+        return;
       }
       if (this.isMobile) {
         this.scrollSnap.kill();

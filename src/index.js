@@ -20,6 +20,7 @@ class Main {
   mql;
   nav;
   waveAnim;
+  preloaderComplete = false;
 
   constructor() {
     this.scrollContainer = document.querySelector('.page-main');
@@ -33,6 +34,8 @@ class Main {
     this.modals = new Modals();
     this.nav = new Nav();
     this.waveAnim = new WaveAnim();
+
+    document.body.style.overflow = 'hidden';
 
     this.initBreakpointListener(); // at this point, this.isMobile is set
 
@@ -86,7 +89,10 @@ class Main {
   }
 
   onPreloaderComplete() {
+    this.preloaderComplete = true;
+    document.body.style.overflow = '';
     this.waveAnim.onPreloaderComplete();
+    this.onChangeBreakpoint(this.mql);
   }
 
   onScrollToSection(e) {
@@ -110,6 +116,10 @@ class Main {
 
     if (this.isMobile) {
       gsap.set($('[data-animation]').not('.nav'), { visibility: 'visible' });
+    }
+
+    if (!this.preloaderComplete) {
+      return;
     }
 
     if (this.isMobile) {

@@ -9,7 +9,6 @@ import WaveAnim from './WaveAnim';
 
 class Main {
   isMobile;
-  scrollContainer;
   scrollSections;
   scrollSnap;
   mobilePinning;
@@ -23,11 +22,10 @@ class Main {
   preloaderComplete = false;
 
   constructor() {
-    this.scrollContainer = document.querySelector('.page-main');
     this.scrollSections = document.querySelectorAll('.section');
 
-    this.scrollSnap = new ScrollSnap(this.scrollContainer, this.scrollSections);
-    this.mobilePinning = new MobilePinning(this.scrollContainer);
+    this.scrollSnap = new ScrollSnap(this.scrollSections);
+    this.mobilePinning = new MobilePinning();
     this.preloader = new Preloader();
     this.carousels = new Carousels();
     this.animations = new Animations();
@@ -127,8 +125,8 @@ class Main {
       this.scrollSnap.kill();
       this.mobilePinning.start();
     } else {
-      this.scrollSnap.start();
       this.mobilePinning.kill();
+      this.scrollSnap.start();
     }
   }
 }

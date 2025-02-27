@@ -1,15 +1,11 @@
 export default class MobilePinning {
   sections;
-  scrollContainer;
 
-  constructor(scrollContainer) {
+  constructor() {
     this.sections = $('.section_part');
-    this.scrollContainer = scrollContainer;
   }
 
   start() {
-    this.scrollContainer.style.transform = 'none';
-
     this.sections.each((index, section) => {
       if (index === this.sections.length - 1) return; // Skip last section
 
@@ -56,6 +52,10 @@ export default class MobilePinning {
   kill() {
     ScrollTrigger.getAll().forEach((st) => {
       if (st.vars.pin) st.kill();
+    });
+
+    this.sections.each((_, section) => {
+      $(section).css({ position: '', zIndex: '' });
     });
   }
 }

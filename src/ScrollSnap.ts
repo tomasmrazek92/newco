@@ -38,13 +38,16 @@ export default class ScrollSnap {
   // State
   private isAnimating = false;
   private isScrollingWithinSection = false;
-  private currentSectionIdx = 0; /** TODO: in the future we might want to have deep-links to other sections which means we would need to calculate what the actual starting section is. */
+  private currentSectionIdx = 0;
   private prevDir: Dir | null = null;
   private prevScrollStrength = 0;
   private targetX = 0;
 
+  // Other
+  private intObs: IntersectionObserver;
+
   // Listeners
-  private onScrollBound = this.onScroll.bind(this);
+  private onIntersectionBound = this.onIntersection.bind(this);
   private onMouseWheelBound = this.onMouseWheel.bind(this);
   private onKeyDownBound = this.onKeyDown.bind(this);
   private onResizeBound = this.onResize.bind(this);
@@ -55,11 +58,11 @@ export default class ScrollSnap {
   // ==============================================================
   /**
    *
-   * @param container Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted.
    * @param sections The blades within that determine where the stop points are.
    */
-  constructor(private container: HTMLElement, private sections: NodeListOf<HTMLElement>) {
+  constructor(private sections: NodeListOf<HTMLElement>) {
     gsap.registerPlugin(ScrollToPlugin);
+    this.intObs = new IntersectionObserver(this.onIntersectionBound, { threshold: 0.2 });
   }
   // ==============================================================
   // #endregion Lifecycle
@@ -67,14 +70,22 @@ export default class ScrollSnap {
   // #region Public methods
   // ==============================================================
   public start() {
-    window.addEventListener('scroll', this.onScrollBound);
+    this.currentSectionIdx = 0;
+    window.scrollTo({ left: 0, top: 0 });
+    this.sections.forEach((elm) => this.intObs.observe(elm));
     window.addEventListener('wheel', this.onMouseWheelBound, { passive: false });
     window.addEventListener('keydown', this.onKeyDownBound, { passive: false });
     window.addEventListener('resize', this.onResizeBound);
   }
 
   public kill() {
-    window.removeEventListener('scroll', this.onScrollBound);
+    this.isAnimating = false;
+    this.isScrollingWithinSection = false;
+    this.prevScrollStrength = 0;
+    this.targetX = 0;
+    this.prevDir = null;
+    this.intObs.disconnect();
+    gsap.killTweensOf(window);
     window.removeEventListener('wheel', this.onMouseWheelBound);
     window.removeEventListener('keydown', this.onKeyDownBound);
     window.removeEventListener('resize', this.onResizeBound);
@@ -115,8 +126,6 @@ export default class ScrollSnap {
         this.isAnimating = false;
       },
     });
-
-    window.dispatchEvent(new CustomEvent('go_to_section', { detail: targetSectionIdx }));
   }
   // ==============================================================
   // #endregion End Public methods
@@ -210,9 +219,18 @@ export default class ScrollSnap {
 
   // #region Event Listeners
   // ==============================================================
-  private onScroll(e: Event) {
-    // TODO: although we override scrolling via the mousewheel and keyboard, there's nothing stopping the user from manually scrolling via the scrollbar
-    // we need to take that into account and recalculate what the current section index is based on which is the most visible one
+  /**
+   * On sections coming on screen, evaluate which one is visible and report back to the main controller
+   */
+  private onIntersection(entries: IntersectionObserverEntry[]) {
+    const visibles = entries.filter((entry) => entry.isIntersecting);
+    // theoretically there can be multiple sections on screen at once, but we know that not to be true. Just get the first.
+    if (visibles.length) {
+      const section = visibles[0].target;
+      const idx = [...this.sections].findIndex((s) => s === section);
+      this.currentSectionIdx = idx;
+      window.dispatchEvent(new CustomEvent('go_to_section', { detail: idx }));
+    }
   }
 
   /**

@@ -282,13 +282,10 @@
   // src/MobilePinning.js
   var MobilePinning = class {
     sections;
-    scrollContainer;
-    constructor(scrollContainer) {
+    constructor() {
       this.sections = $(".section_part");
-      this.scrollContainer = scrollContainer;
     }
     start() {
-      this.scrollContainer.style.transform = "none";
       this.sections.each((index, section) => {
         if (index === this.sections.length - 1)
           return;
@@ -328,6 +325,9 @@
       ScrollTrigger.getAll().forEach((st) => {
         if (st.vars.pin)
           st.kill();
+      });
+      this.sections.each((_, section) => {
+        $(section).css({ position: "", zIndex: "" });
       });
     }
   };
@@ -709,25 +709,25 @@
     // ==============================================================
     /**
      *
-     * @param container Container which "scrolls". It doesn't actually scroll though. Rather its position gets adjusted.
      * @param sections The blades within that determine where the stop points are.
      */
-    constructor(container, sections) {
-      this.container = container;
+    constructor(sections) {
       this.sections = sections;
       gsap.registerPlugin(ScrollToPlugin);
+      this.intObs = new IntersectionObserver(this.onIntersectionBound, { threshold: 0.2 });
     }
     /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
     // State
     isAnimating = false;
     isScrollingWithinSection = false;
     currentSectionIdx = 0;
-    /** TODO: in the future we might want to have deep-links to other sections which means we would need to calculate what the actual starting section is. */
     prevDir = null;
     prevScrollStrength = 0;
     targetX = 0;
+    // Other
+    intObs;
     // Listeners
-    onScrollBound = this.onScroll.bind(this);
+    onIntersectionBound = this.onIntersection.bind(this);
     onMouseWheelBound = this.onMouseWheel.bind(this);
     onKeyDownBound = this.onKeyDown.bind(this);
     onResizeBound = this.onResize.bind(this);
@@ -736,13 +736,21 @@
     // #region Public methods
     // ==============================================================
     start() {
-      window.addEventListener("scroll", this.onScrollBound);
+      this.currentSectionIdx = 0;
+      window.scrollTo({ left: 0, top: 0 });
+      this.sections.forEach((elm) => this.intObs.observe(elm));
       window.addEventListener("wheel", this.onMouseWheelBound, { passive: false });
       window.addEventListener("keydown", this.onKeyDownBound, { passive: false });
       window.addEventListener("resize", this.onResizeBound);
     }
     kill() {
-      window.removeEventListener("scroll", this.onScrollBound);
+      this.isAnimating = false;
+      this.isScrollingWithinSection = false;
+      this.prevScrollStrength = 0;
+      this.targetX = 0;
+      this.prevDir = null;
+      this.intObs.disconnect();
+      gsap.killTweensOf(window);
       window.removeEventListener("wheel", this.onMouseWheelBound);
       window.removeEventListener("keydown", this.onKeyDownBound);
       window.removeEventListener("resize", this.onResizeBound);
@@ -775,7 +783,6 @@
           this.isAnimating = false;
         }
       });
-      window.dispatchEvent(new CustomEvent("go_to_section", { detail: targetSectionIdx }));
     }
     // ==============================================================
     // #endregion End Public methods
@@ -843,7 +850,17 @@
     // #endregion End Private methods
     // #region Event Listeners
     // ==============================================================
-    onScroll(e) {
+    /**
+     * On sections coming on screen, evaluate which one is visible and report back to the main controller
+     */
+    onIntersection(entries) {
+      const visibles = entries.filter((entry) => entry.isIntersecting);
+      if (visibles.length) {
+        const section = visibles[0].target;
+        const idx = [...this.sections].findIndex((s) => s === section);
+        this.currentSectionIdx = idx;
+        window.dispatchEvent(new CustomEvent("go_to_section", { detail: idx }));
+      }
     }
     /**
      * On mouse wheel interaction, figure out which way we're scrolling.
@@ -20900,7 +20917,6 @@ void main() {
   // src/index.js
   var Main = class {
     isMobile;
-    scrollContainer;
     scrollSections;
     scrollSnap;
     mobilePinning;
@@ -20913,10 +20929,9 @@ void main() {
     waveAnim;
     preloaderComplete = false;
     constructor() {
-      this.scrollContainer = document.querySelector(".page-main");
       this.scrollSections = document.querySelectorAll(".section");
-      this.scrollSnap = new ScrollSnap(this.scrollContainer, this.scrollSections);
-      this.mobilePinning = new MobilePinning(this.scrollContainer);
+      this.scrollSnap = new ScrollSnap(this.scrollSections);
+      this.mobilePinning = new MobilePinning();
       this.preloader = new Preloader();
       this.carousels = new Carousels();
       this.animations = new Sections();
@@ -20996,8 +21011,8 @@ void main() {
         this.scrollSnap.kill();
         this.mobilePinning.start();
       } else {
-        this.scrollSnap.start();
         this.mobilePinning.kill();
+        this.scrollSnap.start();
       }
     }
   };

@@ -27,6 +27,9 @@ enum Dir {
 export default class ScrollSnap {
   // #region Properties
   // ==============================================================
+  // Public
+  public paused = false;
+
   // Config
   static readonly SCROLL_DUR = 0.6; /** Speed at which scroll animation happens (in seconds) */
   static readonly SCROLL_EASE_BETWEEN_SECTIONS: gsap.EaseString =
@@ -72,6 +75,7 @@ export default class ScrollSnap {
   public start() {
     this.currentSectionIdx = 0;
     window.scrollTo({ left: 0, top: 0 });
+    this.paused = false;
     this.sections.forEach((elm) => this.intObs.observe(elm));
     window.addEventListener('wheel', this.onMouseWheelBound, { passive: false });
     window.addEventListener('keydown', this.onKeyDownBound, { passive: false });
@@ -237,6 +241,10 @@ export default class ScrollSnap {
    * On mouse wheel interaction, figure out which way we're scrolling.
    */
   private onMouseWheel(e: WheelEvent) {
+    if (this.paused) {
+      return;
+    }
+
     e.preventDefault();
     e.stopImmediatePropagation();
 
@@ -273,6 +281,10 @@ export default class ScrollSnap {
    * On keydown. So the user can still navigate via keyboard.
    */
   private onKeyDown(e: KeyboardEvent) {
+    if (this.paused) {
+      return;
+    }
+
     const tagName = (e.target as HTMLElement).tagName.toLowerCase();
 
     // Ignore form fields and anything else that would have its own keyboard functionality
@@ -312,6 +324,10 @@ export default class ScrollSnap {
    * Window resize event handler
    */
   private onResize() {
+    if (this.paused) {
+      return;
+    }
+
     const targetSection = this.sections[this.currentSectionIdx];
 
     this.targetX = targetSection.offsetLeft;

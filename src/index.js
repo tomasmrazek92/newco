@@ -62,7 +62,7 @@ class Main {
     if (this.isMobile) {
       this.mobilePinning.kill();
     } else {
-      this.scrollSnap.kill();
+      this.scrollSnap.paused = true;
     }
   }
 
@@ -70,7 +70,7 @@ class Main {
     if (this.isMobile) {
       this.mobilePinning.start();
     } else {
-      this.scrollSnap.start();
+      this.scrollSnap.paused = false;
     }
   }
 

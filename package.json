@@ -48,6 +48,7 @@
     "cross-env": "^7.0.3",
     "esbuild": "^0.17.12",
     "esbuild-plugin-glsl": "^1.2.2",
+    "esbuild-plugin-svg": "^0.1.0",
     "eslint": "^8.36.0",
     "eslint-config-prettier": "^8.7.0",
     "eslint-plugin-prettier": "^4.2.1",

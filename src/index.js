@@ -6,6 +6,7 @@ import Nav from './Nav';
 import Preloader from './Preloader';
 import ScrollSnap from './ScrollSnap';
 import WaveAnim from './WaveAnim';
+import WaveAnimAlt from './WaveAnimAlt';
 
 class Main {
   isMobile;
@@ -19,6 +20,7 @@ class Main {
   mql;
   nav;
   waveAnim;
+  waveAnimAlt;
   preloaderComplete = false;
 
   constructor() {
@@ -32,6 +34,7 @@ class Main {
     this.modals = new Modals();
     this.nav = new Nav();
     this.waveAnim = new WaveAnim();
+    this.waveAnimAlt = new WaveAnimAlt();
 
     document.body.style.overflow = 'hidden';
 
@@ -43,6 +46,7 @@ class Main {
 
     window.addEventListener('preloader_complete', this.onPreloaderComplete.bind(this));
     window.addEventListener('go_to_section', this.onScrollToSection.bind(this));
+    window.addEventListener('scrolling', this.onScrolling.bind(this));
     window.addEventListener('modal_open', this.onModalOpen.bind(this));
     window.addEventListener('modal_closed', this.onModalClosed.bind(this));
     window.addEventListener('clicked_nav', this.onClickedNav.bind(this));
@@ -90,6 +94,7 @@ class Main {
     this.preloaderComplete = true;
     document.body.style.overflow = '';
     this.waveAnim.onPreloaderComplete();
+    this.waveAnimAlt.onPreloaderComplete();
     this.onChangeBreakpoint(this.mql);
   }
 
@@ -128,6 +133,10 @@ class Main {
       this.mobilePinning.kill();
       this.scrollSnap.start();
     }
+  }
+
+  onScrolling(e) {
+    this.waveAnimAlt.scrolling(e.detail);
   }
 }
 

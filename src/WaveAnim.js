@@ -198,6 +198,7 @@ export default class WaveAnim {
   }
 
   showHideBottomMesh(opacity) {
+    opacity = 0.0;
     gsap.killTweensOf(this.meshBottom.material.uniforms.uOpacity);
     gsap.to(this.meshBottom.material.uniforms.uOpacity, {
       value: opacity,

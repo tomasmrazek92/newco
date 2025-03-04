@@ -1,7 +1,7 @@
 // import { gsap } from 'gsap'; // "Dynamic require of gsap is not supported"?? Maybe because it's also being included separately via a <script>?
 // import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 
-enum Dir {
+export enum Dir {
   LEFT,
   RIGHT,
 }
@@ -120,6 +120,10 @@ export default class ScrollSnap {
     // If we're scrolling backwards and the target section is wider than the viewport, go to the end of it
     if (fromScrollEvent && dir === Dir.LEFT && targetSection.offsetWidth > window.innerWidth) {
       this.targetX = targetSection.offsetLeft + targetSection.offsetWidth - window.innerWidth;
+    }
+
+    if (!instant) {
+      window.dispatchEvent(new CustomEvent('scrolling', { detail: dir }));
     }
 
     gsap.to(window, {

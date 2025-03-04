@@ -1,5 +1,6 @@
 import * as esbuild from 'esbuild';
 import { glsl } from 'esbuild-plugin-glsl';
+import svgPlugin from 'esbuild-plugin-svg';
 import { readdirSync } from 'fs';
 import { join, sep } from 'path';
 
@@ -32,6 +33,7 @@ const context = await esbuild.context({
     glsl({
       minify: true,
     }),
+    svgPlugin(),
   ],
 });
 
@@ -85,7 +87,9 @@ function logServedFiles() {
       // Create import suggestion
       const tag = location.endsWith('.css')
         ? `<link href="${location}" rel="stylesheet" type="text/css"/>`
-        : `<script defer src="${location}"></script>`;
+        : location.endsWith('.svg')
+          ? `<img src="${location}" alt="SVG"/>`
+          : `<script defer src="${location}"></script>`;
 
       return {
         'File Location': location,

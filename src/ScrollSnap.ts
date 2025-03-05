@@ -37,6 +37,7 @@ export default class ScrollSnap {
   static readonly SCROLL_EASE_WITHIN_SECTION = 0.1; /** The easing strength when scrolling within a long section. */
   static readonly SCROLL_STRENGTH_MULTIPLIER = 0.6; /** Amount to strengthen or dampen the scrollwheel strength by when scrolling within a section. */
   static readonly MIN_SCROLL_STRENGTH = 10; /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
+  static readonly MOMENTUM_TIMEOUT = 500;
 
   // State
   private isAnimating = false;
@@ -45,6 +46,7 @@ export default class ScrollSnap {
   private prevDir: Dir | null = null;
   private prevScrollStrength = 0;
   private targetX = 0;
+  private lastScrollTime = 0;
 
   // Other
   private intObs: IntersectionObserver;
@@ -148,7 +150,8 @@ export default class ScrollSnap {
       return;
     }
 
-    const scrollStrength = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
+    // const scrollStrength = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    const scrollStrength = e.deltaY;
     const dir = scrollStrength > 0 ? Dir.RIGHT : Dir.LEFT;
 
     // ignore initial momentum
@@ -176,10 +179,11 @@ export default class ScrollSnap {
     const currentX = window.scrollX;
     const buffer = 30;
 
-    return (
+    const isWithin =
       (dir === Dir.LEFT && currentX > minX + buffer) ||
-      (dir === Dir.RIGHT && currentX < maxX - buffer)
-    );
+      (dir === Dir.RIGHT && currentX < maxX - buffer);
+
+    return isWithin;
   }
 
   /**
@@ -252,13 +256,19 @@ export default class ScrollSnap {
     e.preventDefault();
     e.stopImmediatePropagation();
 
-    const scrollStrength = Math.abs(e.deltaY) > 0 ? e.deltaY : e.deltaX;
+    // const scrollStrength = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    const scrollStrength = e.deltaY;
+    // console.log(scrollStrength);
 
     // ignore micro-scrolls. Ratcheting mice sometimes throw a super tiny scroll event in the opposite direction at the end of the scroll.
     if (Math.abs(scrollStrength) < ScrollSnap.MIN_SCROLL_STRENGTH) {
+      // console.log('cancel scroll');
       this.prevScrollStrength = 0;
       return;
     }
+
+    const currentTime = performance.now();
+    const timeSinceLastScroll = currentTime - this.lastScrollTime;
 
     const currentSection = this.sections[this.currentSectionIdx];
     if (currentSection.offsetWidth > window.innerWidth) {
@@ -274,10 +284,14 @@ export default class ScrollSnap {
     Ignore momentum scrolling. i.e.: after you've scrolled, some mousewheels or trackpads will continue firing a bunch of wheel events.
     We don't want those to then trigger another scroll event. We want discrete purposeful scrolls only.
     */
-    if (Math.abs(scrollStrength) > this.prevScrollStrength || dir !== this.prevDir) {
+    if (
+      timeSinceLastScroll > ScrollSnap.MOMENTUM_TIMEOUT &&
+      (Math.abs(scrollStrength) > this.prevScrollStrength || dir !== this.prevDir)
+    ) {
       this.go(dir);
     }
 
+    this.lastScrollTime = currentTime;
     this.prevScrollStrength = Math.abs(scrollStrength);
   }
 

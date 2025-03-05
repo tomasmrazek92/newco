@@ -1,4 +1,4 @@
-import { Dir } from './ScrollSnap';
+import ScrollSnap, { Dir } from './ScrollSnap';
 import wave from './wave.svg';
 
 export default class WaveAnimAlt {
@@ -15,6 +15,7 @@ export default class WaveAnimAlt {
     this.waveCtn.style.opacity = '0';
     this.waveCtn.style.width = '100%';
     this.waveCtn.style.position = 'relative';
+    this.waveCtn.style.top = '5px';
     this.container.append(this.waveCtn);
 
     const waveDiv = document.createElement('div');
@@ -70,8 +71,8 @@ export default class WaveAnimAlt {
     const x = dir === Dir.RIGHT ? '-200vw' : '200vw';
     gsap.to(this.waveCtn, {
       x,
-      duration: 0.9,
-      ease: 'power2.out',
+      duration: ScrollSnap.SCROLL_DUR,
+      ease: ScrollSnap.SCROLL_EASE_BETWEEN_SECTIONS,
       onComplete: () => {
         gsap.set(this.waveCtn, { x: 0 });
         this.isAnimating = false;

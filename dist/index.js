@@ -895,10 +895,10 @@
         }
       }
       const dir = scrollStrength > 0 ? 1 /* RIGHT */ : 0 /* LEFT */;
-      if (timeSinceLastScroll > _ScrollSnap.MOMENTUM_TIMEOUT && (Math.abs(scrollStrength) > this.prevScrollStrength || dir !== this.prevDir)) {
+      if (timeSinceLastScroll > _ScrollSnap.MOMENTUM_TIMEOUT && (Math.abs(scrollStrength) - this.prevScrollStrength > 20 || dir !== this.prevDir)) {
+        this.lastScrollTime = currentTime;
         this.go(dir);
       }
-      this.lastScrollTime = currentTime;
       this.prevScrollStrength = Math.abs(scrollStrength);
     }
     /**
@@ -960,7 +960,7 @@
   /** Amount to strengthen or dampen the scrollwheel strength by when scrolling within a section. */
   __publicField(ScrollSnap, "MIN_SCROLL_STRENGTH", 10);
   /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
-  __publicField(ScrollSnap, "MOMENTUM_TIMEOUT", 500);
+  __publicField(ScrollSnap, "MOMENTUM_TIMEOUT", 250);
 
   // node_modules/.pnpm/three@0.173.0/node_modules/three/build/three.core.js
   var REVISION = "173";

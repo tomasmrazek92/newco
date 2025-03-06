@@ -37,7 +37,7 @@ export default class ScrollSnap {
   static readonly SCROLL_EASE_WITHIN_SECTION = 0.1; /** The easing strength when scrolling within a long section. */
   static readonly SCROLL_STRENGTH_MULTIPLIER = 0.6; /** Amount to strengthen or dampen the scrollwheel strength by when scrolling within a section. */
   static readonly MIN_SCROLL_STRENGTH = 10; /** The minimum strength/speed someone has to scroll in order to trigger the effect. */
-  static readonly MOMENTUM_TIMEOUT = 500;
+  static readonly MOMENTUM_TIMEOUT = 250;
 
   // State
   private isAnimating = false;
@@ -108,6 +108,8 @@ export default class ScrollSnap {
     if (this.isAnimating) {
       return;
     }
+
+    // console.log('gotoIdx', targetSectionIdx);
 
     const dir = this.currentSectionIdx < targetSectionIdx ? Dir.RIGHT : Dir.LEFT;
 
@@ -286,12 +288,12 @@ export default class ScrollSnap {
     */
     if (
       timeSinceLastScroll > ScrollSnap.MOMENTUM_TIMEOUT &&
-      (Math.abs(scrollStrength) > this.prevScrollStrength || dir !== this.prevDir)
+      (Math.abs(scrollStrength) - this.prevScrollStrength > 20 || dir !== this.prevDir)
     ) {
+      this.lastScrollTime = currentTime;
       this.go(dir);
     }
 
-    this.lastScrollTime = currentTime;
     this.prevScrollStrength = Math.abs(scrollStrength);
   }
 

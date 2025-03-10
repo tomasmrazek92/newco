@@ -40,6 +40,13 @@ export default class Modals {
       let teamName = teamCard.find('[data-team-name]').text();
       let teamRole = teamCard.find('[data-team-role]').text();
 
+      // Extract the background color from the modalTarget
+      let backgroundColor = $(modalTarget).css('background-color');
+
+      // Apply the background color to the modal element
+      document.querySelector(`[data-modal-name="${modalTargetName}"]`).style.backgroundColor =
+        backgroundColor;
+
       $('[data-target-name]').text(teamName);
       $('[data-target-role]').text(teamRole);
 

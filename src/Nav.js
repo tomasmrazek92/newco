@@ -105,7 +105,7 @@ export default class Nav {
         // const headerOffset = $('.your-header').height(); // Uncomment if needed
         // scrollTarget -= headerOffset;
 
-        gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 2, ease: 'power2.out' });
+        gsap.to(window, { scrollTo: { y: scrollTarget }, duration: 0, ease: 'power2.out' });
       }
     }
   }

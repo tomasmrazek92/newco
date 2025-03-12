@@ -88,14 +88,14 @@ export default class WaveAnim {
     };
 
     const params2 = {
-      position: [0, 2.1, 0],
+      position: [0, 2, 0],
       rotation: [0, 0, Math.PI],
       vertexShader: testVertexShader2,
       fragmentShader: testFragmentShader,
-      freqX: -3,
-      freqY: 1.9,
-      twist: -3.5,
-      elevation: 0.2,
+      freqX: -5,
+      freqY: -1.3,
+      twist: -3,
+      elevation: 0.1,
     };
 
     // Create and add both meshes
@@ -107,7 +107,7 @@ export default class WaveAnim {
     //  */
     const tick = () => {
       if (this.meshTop) {
-        this.meshTop.material.uniforms.uManualTime.value += 0.0025;
+        this.meshTop.material.uniforms.uManualTime.value += 0.0023;
       }
 
       if (this.meshBottom) {

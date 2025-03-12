@@ -1,5 +1,6 @@
 import Animations from './Animations';
 import Carousels from './Carousels';
+import HomepageWaveAnim from './HomepageWaveAnim';
 import MobilePinning from './MobilePinning';
 import Modals from './Modals';
 import Nav from './Nav';
@@ -21,6 +22,7 @@ class Main {
   nav;
   waveAnim;
   waveAnimAlt;
+  homepageAnim;
   preloaderComplete = false;
 
   constructor() {
@@ -35,6 +37,7 @@ class Main {
     this.nav = new Nav();
     this.waveAnim = new WaveAnim();
     this.waveAnimAlt = new WaveAnimAlt();
+    this.homepageAnim = new HomepageWaveAnim();
 
     document.body.style.overflow = 'hidden';
 
@@ -93,6 +96,7 @@ class Main {
   onPreloaderComplete() {
     this.preloaderComplete = true;
     document.body.style.overflow = '';
+    this.homepageAnim.play();
     this.waveAnim.onPreloaderComplete();
     this.waveAnimAlt.onPreloaderComplete();
     this.onChangeBreakpoint(this.mql);
@@ -102,6 +106,10 @@ class Main {
     const currentSection = this.scrollSections[e.detail];
     const parentSection = currentSection.closest('.section_part').dataset.section;
     this.nav.currentSection = parentSection;
+
+    if (parentSection === 'none') {
+      this.homepageAnim.play();
+    }
 
     window.history.replaceState(
       {},

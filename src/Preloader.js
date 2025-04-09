@@ -47,12 +47,11 @@ export default class Preloader {
     gsap.set(sections, { autoAlpha: 0 });
     gsap.set(nav, { autoAlpha: 0 });
 
-    const self = this;
-    preloaderParts.each(function (index) {
-      const $element = $(this);
+    preloaderParts.each((index, element) => {
+      const $element = $(element);
 
       if (index === 0) {
-        self.tl.fromTo(
+        this.tl.fromTo(
           $element,
           {
             yPercent: 50,
@@ -66,7 +65,7 @@ export default class Preloader {
             display: 'block',
           }
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgTop,
           {
             xPercent: -5,
@@ -74,7 +73,7 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgBottom,
           {
             xPercent: 5,
@@ -82,13 +81,13 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to($element, {
+        this.tl.to($element, {
           opacity: 0,
           delay: 1.5,
         });
       }
       if (index === 1) {
-        self.tl.fromTo(
+        this.tl.fromTo(
           $element,
           {
             opacity: 0,
@@ -100,7 +99,7 @@ export default class Preloader {
             scale: 1,
           }
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgTop,
           {
             xPercent: -10,
@@ -108,7 +107,7 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgBottom,
           {
             xPercent: 10,
@@ -116,16 +115,16 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to($element, {
+        this.tl.to($element, {
           opacity: 0,
           delay: 0.7,
         });
       }
       if (index === 2) {
-        self.tl.to($element, {
+        this.tl.to($element, {
           display: 'block',
         });
-        self.tl.fromTo(
+        this.tl.fromTo(
           $element.find('span'),
           {
             yPercent: 50,
@@ -136,7 +135,7 @@ export default class Preloader {
             opacity: 1,
           }
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgTop,
           {
             xPercent: -15,
@@ -144,7 +143,7 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgBottom,
           {
             xPercent: 15,
@@ -152,7 +151,7 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           $element.find('span'),
           {
             yPercent: 0,
@@ -164,21 +163,21 @@ export default class Preloader {
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgTop,
           {
             yPercent: -100,
           },
           '<'
         );
-        self.tl.to(
+        this.tl.to(
           preLoaderBgBottom,
           {
             xPercent: 100,
           },
           '<'
         );
-        self.tl.to($element, {
+        this.tl.to($element, {
           opacity: 0,
         });
       }
